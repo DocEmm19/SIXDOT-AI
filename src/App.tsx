@@ -14,6 +14,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentPage, setCurrentPage] = useState<'auth' | 'home' | 'chatbot'>('auth');
   const [chatbotContext, setChatbotContext] = useState<'upload' | 'medicine-search' | 'question'>('question');
+  const [chatSessionId, setChatSessionId] = useState<string | undefined>(undefined);
 
   const handleLogin = (user: User) => {
     setCurrentUser(user);
@@ -27,6 +28,7 @@ function App() {
 
   const handleNavigateToChatbot = (context: 'upload' | 'medicine-search' | 'question') => {
     setChatbotContext(context);
+    setChatSessionId(undefined); // Start new session
     setCurrentPage('chatbot');
   };
 
@@ -44,6 +46,7 @@ function App() {
             user={currentUser} 
             onBack={handleBackToHome}
             initialContext={chatbotContext}
+            sessionId={chatSessionId}
           />
         ) : currentUser && currentPage === 'home' ? (
           <HomePage user={currentUser} onLogout={handleLogout} onNavigateToChatbot={handleNavigateToChatbot} />
