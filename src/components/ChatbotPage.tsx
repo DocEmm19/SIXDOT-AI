@@ -237,7 +237,10 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
       const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL;
       
       if (!webhookUrl) {
-        throw new Error('N8N webhook URL not configured. Please set VITE_N8N_WEBHOOK_URL in your .env file.');
+        console.warn('N8N webhook URL not configured. Using fallback response.');
+        // Return a fallback response when webhook is not configured
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate processing time
+        return `Thank you for your message: "${userMessage}"\n\nI'm currently running in demo mode. To get AI-powered responses, please configure your n8n webhook URL in the .env file.\n\nFor now, I can help you understand that I would normally:\n- Analyze your prescription or medical documents\n- Provide detailed medicine information\n- Answer health-related questions\n- Give dosage and safety guidelines\n\nPlease set up your n8n webhook to enable full AI functionality.`;
       }
       
       console.log('🚀 Sending request to webhook:', webhookUrl);

@@ -140,7 +140,22 @@ export const createChatSession = async (data: {
   context: string;
 }): Promise<ChatSession | null> => {
   if (!supabase) {
-    console.warn('Supabase not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+    console.warn('Supabase not configured. Creating local session.');
+    // Return a mock session for local development
+    return {
+      id: `local-${Date.now()}`,
+      user_id: 'local-user',
+      title: data.title || 'New Chat',
+      context: data.context,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  // Get current authenticated user
+  const user = await getCurrentUser();
+  if (!user) {
+    console.error('User not authenticated');
     return null;
   }
 
