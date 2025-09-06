@@ -246,6 +246,35 @@ body {
   border-bottom-color: rgba(148, 163, 184, 0.2);
 }
 
+/* Responsive design for auth container */
+@media (max-width: 1024px) {
+  .auth-container {
+    flex-direction: column;
+    max-width: 500px !important;
+  }
+  
+  .info-panel {
+    max-width: 100% !important;
+    order: 2;
+  }
+  
+  .main-container {
+    max-width: 100% !important;
+    order: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .auth-container {
+    padding: 0 20px;
+  }
+  
+  .info-panel,
+  .main-container {
+    padding: 24px !important;
+  }
+}
+
 .particle1 { top: 10%; left: 15%; animation-delay: 0s; }
 .particle2 { top: 30%; right: 25%; animation-delay: 2s; }
 .particle3 { top: 70%; left: 20%; animation-delay: 4s; }

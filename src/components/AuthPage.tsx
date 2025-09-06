@@ -224,7 +224,55 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
         <ThemeToggle />
       </div>
       
-      <div className="main-container bg-[var(--glass-bg)] backdrop-blur-[30px] border border-[var(--glass-border)] rounded-3xl p-10 w-full max-w-[450px] shadow-[0_25px_50px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] animate-[containerGlow_0.8s_ease-out]">
+      <div className="auth-container flex gap-8 w-full max-w-[1000px] items-center">
+        {/* Information Panel */}
+        <div className="info-panel bg-[var(--glass-bg)] backdrop-blur-[30px] border border-[var(--glass-border)] rounded-3xl p-8 flex-1 max-w-[480px] shadow-[0_25px_50px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] animate-[containerGlow_0.8s_ease-out]">
+          <div className="info-content">
+            <div className="info-header mb-6">
+              <h2 className="info-title font-['Orbitron'] text-2xl font-semibold text-[var(--text-primary)] mb-3">
+                Advanced Healthcare AI Platform
+              </h2>
+              <div className="info-divider w-16 h-1 bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] rounded-full mb-4"></div>
+            </div>
+            
+            <div className="info-description mb-6">
+              <p className="text-[var(--text-secondary)] leading-relaxed mb-4">
+                MediLens leverages cutting-edge artificial intelligence to enhance healthcare decision-making and patient care. Our platform provides healthcare professionals with powerful tools for medical analysis, research, and consultation.
+              </p>
+              
+              <div className="features-list space-y-3">
+                <div className="feature-item flex items-center">
+                  <div className="feature-dot w-2 h-2 bg-[var(--primary-cyan)] rounded-full mr-3"></div>
+                  <span className="text-[var(--text-secondary)] text-sm">AI-powered medical document analysis</span>
+                </div>
+                <div className="feature-item flex items-center">
+                  <div className="feature-dot w-2 h-2 bg-[var(--primary-cyan)] rounded-full mr-3"></div>
+                  <span className="text-[var(--text-secondary)] text-sm">Comprehensive medication database search</span>
+                </div>
+                <div className="feature-item flex items-center">
+                  <div className="feature-dot w-2 h-2 bg-[var(--primary-cyan)] rounded-full mr-3"></div>
+                  <span className="text-[var(--text-secondary)] text-sm">Instant medical consultation and Q&A</span>
+                </div>
+                <div className="feature-item flex items-center">
+                  <div className="feature-dot w-2 h-2 bg-[var(--primary-cyan)] rounded-full mr-3"></div>
+                  <span className="text-[var(--text-secondary)] text-sm">HIPAA-compliant secure data handling</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="disclaimer bg-[rgba(255,255,255,0.05)] border border-[var(--glass-border)] rounded-xl p-4">
+              <h4 className="disclaimer-title font-semibold text-[var(--text-primary)] text-sm mb-2">
+                Important Medical Disclaimer
+              </h4>
+              <p className="disclaimer-text text-[var(--text-muted)] text-xs leading-relaxed">
+                MediLens is designed to assist healthcare professionals and is not intended to replace professional medical advice, diagnosis, or treatment. Always seek the advice of qualified healthcare providers with any questions regarding medical conditions. Never disregard professional medical advice or delay seeking treatment based on information provided by this platform.
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Auth Form Container */}
+        <div className="main-container bg-[var(--glass-bg)] backdrop-blur-[30px] border border-[var(--glass-border)] rounded-3xl p-10 w-full max-w-[450px] shadow-[0_25px_50px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] animate-[containerGlow_0.8s_ease-out]">
         <div className="logo-section text-center mb-10">
           <div className="mx-auto mb-6">
             <MedicalLogo size={120} />
@@ -419,6 +467,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
             )}
           </div>
         </form>
+      </div>
       </div>
     </div>
   );
