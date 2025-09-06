@@ -3,7 +3,6 @@ import { LogOut, Brain, Shield, Zap, Upload, Search, MessageSquare, FileText, Ac
 import MedicalLogo from './MedicalLogo';
 import { User } from '../App';
 import Modal from './Modal';
-import ThemeToggle from './ThemeToggle';
 
 interface HomePageProps {
   user: User;
@@ -111,7 +110,6 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
           <div className="user-info text-[var(--text-secondary)] text-sm">
             Welcome, {user.name}
           </div>
-          <ThemeToggle />
           <button
             onClick={onLogout}
             className="logout-btn p-[8px_16px] bg-[rgba(255,255,255,0.1)] border border-[var(--glass-border)] rounded-lg text-[var(--text-secondary)] cursor-pointer transition-all duration-200 hover:bg-[rgba(255,255,255,0.15)] hover:text-[var(--text-primary)]"
