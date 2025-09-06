@@ -96,13 +96,22 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
         throw new Error('N8N webhook URL not configured. Please set VITE_N8N_WEBHOOK_URL in your .env file.');
       }
       
-      console.log('Sending request to webhook:', webhookUrl);
+      console.log('🚀 Sending request to webhook:', webhookUrl);
+      console.log('📤 Request payload:', {
+        message: userMessage,
+        context: initialContext,
+        userEmail: user.email,
+        userName: user.name,
+        timestamp: new Date().toISOString(),
+        source: 'medilens-chatbot'
+      });
       
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'User-Agent': 'MediLens-Chatbot/1.0',
         },
         body: JSON.stringify({
           message: userMessage,
@@ -114,23 +123,24 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
         })
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
+      console.log('📥 Response status:', response.status);
+      console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Error response:', errorText);
+        console.error('❌ Error response:', errorText);
         throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
 
       const responseText = await response.text();
-      console.log('Raw response:', responseText);
+      console.log('📄 Raw response:', responseText);
       
       let data;
       try {
         data = JSON.parse(responseText);
+        console.log('✅ Parsed JSON response:', data);
       } catch (parseError) {
-        console.error('Failed to parse JSON response:', parseError);
+        console.error('⚠️ Failed to parse JSON response:', parseError);
         // If response is not JSON, treat it as plain text
         return responseText || 'Received response from workflow but could not parse it.';
       }
@@ -139,10 +149,11 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
       return data.response || data.message || data.output || responseText || 'No response received from the workflow.';
       
     } catch (error) {
-      console.error('Error calling n8n webhook:', error);
+      console.error('💥 Error calling n8n webhook:', error);
       
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Network error: Unable to connect to the AI service. Please check your internet connection and webhook URL.');
+        console.error('🌐 Network error detected - check webhook URL and connectivity');
+        throw new Error('Network error: Unable to connect to the n8n webhook. Please verify the webhook URL is correct and accessible.');
       }
       
       throw new Error(`AI service error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`);
