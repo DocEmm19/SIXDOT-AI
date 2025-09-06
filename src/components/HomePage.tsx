@@ -222,7 +222,7 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
               <div className="question-examples text-left mb-4">
                 <p className="text-[var(--text-secondary)] text-xs mb-1">Example questions:</p>
                 <p className="text-[var(--text-muted)] text-xs italic">"What are the side effects of ibuprofen?"</p>
-                <p className="text-[var(--text-muted)] text-xs italic">"Research on Covid 16"</p>
+                <p className="text-[var(--text-muted)] text-xs italic">"Research on COVID 19"</p>
               </div>
               <button
                 type="submit"
