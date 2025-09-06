@@ -94,6 +94,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
     };
 
     initializeChat();
+  }, []);
 
   const loadChatSessions = async () => {
     const sessions = await getChatSessions();
@@ -358,6 +359,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
     
     return formatted.trim();
   };
+  
   const handleSendMessage = async () => {
     const messageToSend = extractedText || inputMessage.trim();
     if (!messageToSend || isLoading) return;
