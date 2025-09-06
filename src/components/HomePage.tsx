@@ -103,7 +103,7 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
               <Search className="w-7 h-7 text-white" />
             </div>
             <h3 className="feature-title font-['Orbitron'] text-xl font-semibold text-[var(--text-primary)] mb-3">
-              Medical Research
+              Search Medicine Information
             </h3>
             <p className="feature-description text-[var(--text-secondary)] leading-[1.6] mb-5">
               Access comprehensive medical databases and research papers with intelligent search capabilities
