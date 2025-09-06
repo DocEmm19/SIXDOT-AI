@@ -110,11 +110,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
       console.log('🚀 Sending request to webhook:', webhookUrl);
       
       const payload = {
-        data: getContextSpecificPayload(userMessage),
-        userEmail: user.email,
-        userName: user.name,
-        timestamp: new Date().toISOString(),
-        source: 'medilens-chatbot'
+        message: [userMessage]
       };
       
       console.log('📤 Request payload:', payload);
@@ -195,14 +191,6 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
       // Re-throw the error with the specific message we created above
       throw error;
     }
-  };
-
-  const getContextSpecificPayload = (userMessage: string) => {
-    // Always send user input (including extracted text) in the "message" field
-    return {
-      message: userMessage,
-      context: initialContext
-    };
   };
 
   const extractMedicineName = (text: string): string => {
