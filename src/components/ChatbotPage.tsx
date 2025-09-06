@@ -9,6 +9,7 @@ import {
   getChatMessages, 
   updateChatSessionTitle,
   getChatSessions,
+  deleteChatSession,
   getCurrentUser,
   ChatSession,
   ChatMessage as DBChatMessage
@@ -164,12 +165,18 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
 
   const handleDeleteSession = async (sessionId: string, event: React.MouseEvent) => {
     event.stopPropagation();
-    // Note: You'll need to add a delete function to supabase.ts
-    // For now, just remove from local state
-    setChatSessions(prev => prev.filter(s => s.id !== sessionId));
     
-    if (currentSessionId === sessionId) {
-      await handleNewChat();
+    const success = await deleteChatSession(sessionId);
+    if (success) {
+      // Remove from local state
+      setChatSessions(prev => prev.filter(s => s.id !== sessionId));
+      
+      // If we deleted the current session, create a new one
+      if (currentSessionId === sessionId) {
+        await handleNewChat();
+      }
+    } else {
+      console.error('Failed to delete chat session');
     }
   };
 

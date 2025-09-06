@@ -314,6 +314,30 @@ export const deleteChatSession = async (sessionId: string): Promise<boolean> => 
   }
 };
 
+export const deleteChatSession = async (sessionId: string): Promise<boolean> => {
+  if (!supabase) {
+    console.warn('Supabase not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+    return false;
+  }
+
+  try {
+    const { error } = await supabase
+      .from('chat_sessions')
+      .delete()
+      .eq('id', sessionId);
+
+    if (error) {
+      console.error('Error deleting chat session:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in deleteChatSession:', error);
+    return false;
+  }
+};
+
 export const getUserActivities = async (userEmail: string): Promise<UserActivity[]> => {
   if (!supabase) {
     console.warn('Supabase not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
