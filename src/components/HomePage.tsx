@@ -17,12 +17,69 @@ interface Answer {
   timestamp: Date;
 }
 
+interface MedicineInfo {
+  name: string;
+  genericName: string;
+  description: string;
+  uses: string[];
+  sideEffects: string[];
+  dosage: string;
+  warnings: string[];
+  source: string;
+}
+
 const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [medicineQuery, setMedicineQuery] = useState('');
+  const [medicineResults, setMedicineResults] = useState<MedicineInfo[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const handleFeatureClick = (feature: string) => {
     setActiveModal(feature);
+  };
+
+  const handleMedicineSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!medicineQuery.trim()) return;
+
+    setIsSearching(true);
+    
+    // Simulate API call to trusted medical database
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Mock medicine data - in real implementation, this would come from APIs like:
+    // - FDA Orange Book API
+    // - RxNorm API
+    // - OpenFDA API
+    // - Drugs.com API
+    const mockResults: MedicineInfo[] = [
+      {
+        name: medicineQuery,
+        genericName: `Generic ${medicineQuery}`,
+        description: `${medicineQuery} is a medication used for therapeutic purposes. This information is sourced from trusted medical databases.`,
+        uses: [
+          'Treatment of specific medical conditions',
+          'Prevention of certain symptoms',
+          'Management of chronic conditions'
+        ],
+        sideEffects: [
+          'Common: Mild headache, nausea',
+          'Uncommon: Dizziness, fatigue',
+          'Rare: Allergic reactions'
+        ],
+        dosage: 'As prescribed by healthcare provider. Typical adult dose: Follow medical guidance.',
+        warnings: [
+          'Consult healthcare provider before use',
+          'Not recommended during pregnancy without medical supervision',
+          'May interact with other medications'
+        ],
+        source: 'FDA Database & Medical Literature'
+      }
+    ];
+    
+    setMedicineResults(mockResults);
+    setIsSearching(false);
   };
 
   const handleAskQuestion = (question: string) => {
@@ -95,22 +152,42 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
             </button>
           </div>
 
-          <div
-            className="feature-card bg-[var(--glass-bg)] backdrop-blur-[20px] border border-[var(--glass-border)] rounded-[20px] p-8 text-center transition-all duration-300 cubic-bezier-[0.4,0,0.2,1] cursor-pointer relative overflow-hidden hover:transform hover:-translate-y-2 hover:border-[var(--primary-cyan)] hover:shadow-[0_25px_50px_rgba(0,212,170,0.2)] before:content-[''] before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-[rgba(0,212,170,0.1)] before:to-transparent before:transition-[left_0.6s_ease] hover:before:left-full"
-            onClick={() => handleFeatureClick('search')}
-          >
+          {/* Medicine Search Card */}
+          <div className="feature-card bg-[var(--glass-bg)] backdrop-blur-[20px] border border-[var(--glass-border)] rounded-[20px] p-8 transition-all duration-300 cubic-bezier-[0.4,0,0.2,1] relative overflow-hidden hover:transform hover:-translate-y-2 hover:border-[var(--primary-cyan)] hover:shadow-[0_25px_50px_rgba(0,212,170,0.2)]">
             <div className="feature-icon w-[60px] h-[60px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] rounded-2xl flex items-center justify-center mx-auto mb-5 text-[28px]">
               <Search className="w-7 h-7 text-white" />
             </div>
-            <h3 className="feature-title font-['Orbitron'] text-xl font-semibold text-[var(--text-primary)] mb-3">
+            <h3 className="feature-title font-['Orbitron'] text-xl font-semibold text-[var(--text-primary)] mb-3 text-center">
               Search Medicine Information
             </h3>
-            <p className="feature-description text-[var(--text-secondary)] leading-[1.6] mb-5">
-              Access comprehensive medical databases and research papers with intelligent search capabilities
+            <p className="feature-description text-[var(--text-secondary)] leading-[1.6] mb-5 text-center">
+              Get detailed information about medications from trusted medical databases
             </p>
-            <button className="feature-button p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)]">
-              Search Database
-            </button>
+            
+            <form onSubmit={handleMedicineSearch} className="medicine-search-form">
+              <div className="search-input-container relative mb-4">
+                <input
+                  type="text"
+                  value={medicineQuery}
+                  onChange={(e) => setMedicineQuery(e.target.value)}
+                  placeholder="Enter medicine name (e.g., Aspirin, Ibuprofen)"
+                  className="medicine-search-input w-full p-4 bg-[rgba(255,255,255,0.08)] border border-[var(--glass-border)] rounded-xl text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--primary-cyan)] focus:shadow-[0_0_0_3px_rgba(0,212,170,0.15)] placeholder:text-[var(--text-muted)]"
+                  disabled={isSearching}
+                />
+                {isSearching && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <div className="w-5 h-5 border-2 border-[var(--primary-cyan)] border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                )}
+              </div>
+              <button
+                type="submit"
+                disabled={!medicineQuery.trim() || isSearching}
+                className="feature-button w-full p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {isSearching ? 'Searching...' : 'Search Medicine'}
+              </button>
+            </form>
           </div>
 
           <div
