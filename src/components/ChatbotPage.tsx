@@ -110,7 +110,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
       console.log('🚀 Sending request to webhook:', webhookUrl);
       
       const payload = {
-        ...getContextSpecificPayload(userMessage),
+        data: getContextSpecificPayload(userMessage),
         userEmail: user.email,
         userName: user.name,
         timestamp: new Date().toISOString(),
