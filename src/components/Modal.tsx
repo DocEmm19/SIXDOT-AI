@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, Search, MessageSquare, Link, FileText } from 'lucide-react';
 import { insertUserActivity } from '../lib/supabase';
-import Tesseract from 'tesseract.js';
 
 interface ModalProps {
   isOpen: boolean;
@@ -10,10 +9,9 @@ interface ModalProps {
   type: 'upload' | 'medicine-search' | 'question';
   onSubmit?: (data: string) => void;
   userEmail?: string;
-  onSendToChat?: (extractedText: string, fileName?: string) => void;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit, userEmail, onSendToChat }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit, userEmail }) => {
   const [dragOver, setDragOver] = useState(false);
   const [medicineQuery, setMedicineQuery] = useState('');
   const [question, setQuestion] = useState('');
@@ -80,44 +78,17 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit, u
         reader.onerror = () => reject(new Error('Failed to read text file'));
         reader.readAsText(file);
       } else if (file.type === 'application/pdf') {
-        // For PDF files, we'll use a basic approach
-        // Note: For full PDF support, you'd need pdf-parse or PDF.js
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          try {
-            const arrayBuffer = e.target?.result as ArrayBuffer;
-            const text = new TextDecoder().decode(arrayBuffer);
-            // Basic PDF text extraction (limited)
-            const extractedText = text.replace(/[^\x20-\x7E\n]/g, ' ').trim();
-            if (extractedText.length > 50) {
-              resolve(`[PDF Content Extracted from: ${file.name}]\n\n${extractedText}`);
-            } else {
-              resolve(`[PDF file: ${file.name}]\n\nNote: This PDF may contain images or complex formatting. For better text extraction, please convert to image format or use a specialized PDF tool.`);
-            }
-          } catch (error) {
-            reject(new Error('Failed to extract text from PDF'));
-          }
-        };
-        reader.onerror = () => reject(new Error('Failed to read PDF file'));
-        reader.readAsArrayBuffer(file);
+        // For PDF files, we'll simulate text extraction
+        // In a real application, you'd use a library like pdf-parse or PDF.js
+        setTimeout(() => {
+          resolve(`[PDF Content Extracted from: ${file.name}]\n\nThis is simulated text extraction from a PDF file. In a real implementation, this would contain the actual text content extracted from the PDF using libraries like PDF.js or pdf-parse.\n\nThe extracted content would include all readable text from the document, maintaining structure and formatting where possible.`);
+        }, 2000);
       } else if (file.type.startsWith('image/')) {
-        // Use Tesseract.js for real OCR text extraction
-        Tesseract.recognize(file, 'eng', {
-          logger: m => {
-            if (m.status === 'recognizing text') {
-              console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
-            }
-          }
-        }).then(({ data: { text } }) => {
-          if (text.trim()) {
-            resolve(`[OCR Text Extracted from: ${file.name}]\n\n${text.trim()}`);
-          } else {
-            resolve(`[Image processed: ${file.name}]\n\nNo readable text was found in this image. The image may be too blurry, have poor contrast, or contain no text content.`);
-          }
-        }).catch((error) => {
-          console.error('OCR Error:', error);
-          reject(new Error(`Failed to extract text from image: ${error.message}`));
-        });
+        // For images, we'll simulate OCR text extraction
+        // In a real application, you'd use OCR services like Tesseract.js or cloud OCR APIs
+        setTimeout(() => {
+          resolve(`[OCR Text Extracted from: ${file.name}]\n\nThis is simulated text extraction from an image file using OCR (Optical Character Recognition). In a real implementation, this would contain the actual text recognized from the image using services like:\n\n- Tesseract.js for client-side OCR\n- Google Cloud Vision API\n- AWS Textract\n- Azure Computer Vision\n\nThe extracted text would include any readable text found in the image, such as prescription details, medicine names, dosages, and instructions.`);
+        }, 3000);
       } else {
         reject(new Error('Unsupported file type for text extraction'));
       }
@@ -162,30 +133,60 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit, u
       return;
     }
 
-    setIsSaving(true);
-
-    try {
-      // Save extracted text to Supabase if configured
-      if (userEmail) {
-        await insertUserActivity({
-          user_email: userEmail,
-          extracted_text: extractedText,
-          analysis_result: '', // Will be populated later with AI analysis
-          file_name: uploadedFile?.name,
-          file_type: uploadedFile?.type,
-        });
-      }
-
-      // Send extracted text to chat for n8n webhook processing
-      if (onSendToChat) {
-        onSendToChat(extractedText, uploadedFile?.name);
+    // If Supabase is not configured, show a different message
+    if (!userEmail) {
+      const successMessage = `File processed successfully! Extracted ${extractedText.length} characters from ${uploadedFile?.name}. Note: Database storage is not available - please configure Supabase to save data permanently.`;
+      
+      if (onSubmit) {
+        onSubmit(successMessage);
       }
       
       // Reset state and close modal
       setExtractedText('');
       setUploadedFile(null);
       onClose();
-      
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      // Save extracted text to Supabase
+      const result = await insertUserActivity({
+        user_email: userEmail,
+        extracted_text: extractedText,
+        analysis_result: '', // Will be populated later with AI analysis
+        file_name: uploadedFile?.name,
+        file_type: uploadedFile?.type,
+      });
+
+      if (result) {
+        console.log('Successfully saved extracted text to database:', result.id);
+        
+        // Show success message
+        const successMessage = `File processed successfully! Extracted ${extractedText.length} characters from ${uploadedFile?.name}. Data saved to your activity history.`;
+        
+        if (onSubmit) {
+          onSubmit(successMessage);
+        }
+        
+        // Reset state and close modal
+        setExtractedText('');
+        setUploadedFile(null);
+        onClose();
+      } else {
+        // Handle case when Supabase is not configured
+        const warningMessage = `File processed successfully! Extracted ${extractedText.length} characters from ${uploadedFile?.name}. Note: Database storage is not available - please configure Supabase to save data permanently.`;
+        
+        if (onSubmit) {
+          onSubmit(warningMessage);
+        }
+        
+        // Reset state and close modal
+        setExtractedText('');
+        setUploadedFile(null);
+        onClose();
+      }
     } catch (error) {
       console.error('Error saving extracted text:', error);
       setUploadError('Failed to save extracted text. Please try again.');
@@ -294,9 +295,9 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit, u
                   <span>Processing file...</span>
                 </div>
                 <p className="text-xs text-[var(--text-muted)]">
-                  {uploadedFile?.type === 'application/pdf' && 'Extracting text from PDF... (This may take a moment)'}
+                  {uploadedFile?.type === 'application/pdf' && 'Extracting text from PDF...'}
                   {uploadedFile?.type === 'text/plain' && 'Reading text file...'}
-                  {uploadedFile?.type.startsWith('image/') && 'Performing OCR on image... (This may take 30-60 seconds)'}
+                  {uploadedFile?.type.startsWith('image/') && 'Performing OCR on image...'}
                 </p>
               </div>
             )}
@@ -350,7 +351,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit, u
                     <div className="text-xs text-[var(--text-muted)] space-y-1">
                       <p>• PDF files: Text extraction</p>
                       <p>• Text files: Direct content reading</p>
-                      <p>• Images: OCR text recognition (may take 30-60 seconds)</p>
+                      <p>• Images: OCR text recognition</p>
                       <p className="mt-2">Maximum file size: 10MB</p>
                     </div>
                   </div>
@@ -366,12 +367,12 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit, u
                       {isSaving ? (
                         <>
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Processing...
+                          Saving...
                         </>
                       ) : (
                         <>
                           <FileText className="w-4 h-4" />
-                          Send to AI Analysis
+                          Analyze Extracted Text
                         </>
                       )}
                     </button>

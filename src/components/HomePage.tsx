@@ -31,7 +31,9 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout, onNavigateToChatbot
 
   const handleFeatureClick = (feature: string) => {
     if (feature === 'upload') {
-      onNavigateToChatbot('upload');
+      setModalType('upload');
+      setModalTitle('Upload Your Doctor\'s Prescription');
+      setModalOpen(true);
     } else if (feature === 'medicine-search') {
       onNavigateToChatbot('medicine-search');
     } else if (feature === 'question') {
@@ -216,6 +218,14 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout, onNavigateToChatbot
       </div>
 
       {/* Modal */}
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={modalTitle}
+        type={modalType}
+        onSubmit={handleAddAnswer}
+        userEmail={user.email}
+      />
 
       {/* Interactive Tutorial */}
       {!showWelcomeModal && (
