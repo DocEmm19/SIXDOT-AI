@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, ArrowLeft, Bot, User, Upload, Search, MessageSquare, Loader2 } from 'lucide-react';
+import { Send, ArrowLeft, Bot, User, Upload, Search, MessageSquare, Loader2, Plus, Menu, X, Clock, Trash2 } from 'lucide-react';
 import MedicalLogo from './MedicalLogo';
 import { User as UserType } from '../App';
 import ThemeToggle from './ThemeToggle';
@@ -8,6 +8,7 @@ import {
   insertChatMessage, 
   getChatMessages, 
   updateChatSessionTitle,
+  getChatSessions,
   ChatSession,
   ChatMessage as DBChatMessage
 } from '../lib/supabase';
@@ -34,6 +35,9 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
   const [isLoading, setIsLoading] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(sessionId || null);
   const [extractedText, setExtractedText] = useState<string>('');
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [currentSessionTitle, setCurrentSessionTitle] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -48,10 +52,18 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
   // Initialize chat session and load messages
   useEffect(() => {
     const initializeChat = async () => {
+      // Load user's chat sessions
+      await loadChatSessions();
+      
       if (sessionId) {
         // Load existing session
         setCurrentSessionId(sessionId);
         await loadChatMessages(sessionId);
+        const sessions = await getChatSessions(user.email);
+        const currentSession = sessions.find(s => s.id === sessionId);
+        if (currentSession) {
+          setCurrentSessionTitle(currentSession.title);
+        }
       } else {
         // Create new session
         await createNewChatSession();
@@ -66,6 +78,11 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
     initializeChat();
   }, [initialContext]);
 
+  const loadChatSessions = async () => {
+    const sessions = await getChatSessions(user.email);
+    setChatSessions(sessions);
+  };
+
   const createNewChatSession = async () => {
     // Get user profile ID from email (assuming profiles table exists)
     const session = await createChatSession({
@@ -76,6 +93,8 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
 
     if (session) {
       setCurrentSessionId(session.id);
+      setCurrentSessionTitle(session.title);
+      await loadChatSessions(); // Refresh sessions list
       
       // Add welcome message
       const welcomeMessage = getWelcomeMessage();
@@ -96,6 +115,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
     } else {
       // Fallback to local messages if Supabase is not configured
       const welcomeMessage = getWelcomeMessage();
+      setCurrentSessionTitle(getContextTitle());
       setMessages([{
         id: Date.now().toString(),
         type: 'bot',
@@ -115,6 +135,48 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
       attachmentType: msg.attachment_type || undefined
     }));
     setMessages(formattedMessages);
+  };
+
+  const handleNewChat = async () => {
+    setMessages([]);
+    setCurrentSessionId(null);
+    setCurrentSessionTitle('');
+    setExtractedText('');
+    setInputMessage('');
+    setShowSidebar(false);
+    await createNewChatSession();
+  };
+
+  const handleLoadSession = async (session: ChatSession) => {
+    setCurrentSessionId(session.id);
+    setCurrentSessionTitle(session.title);
+    setExtractedText('');
+    setInputMessage('');
+    setShowSidebar(false);
+    await loadChatMessages(session.id);
+  };
+
+  const handleDeleteSession = async (sessionId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    // Note: You'll need to add a delete function to supabase.ts
+    // For now, just remove from local state
+    setChatSessions(prev => prev.filter(s => s.id !== sessionId));
+    
+    if (currentSessionId === sessionId) {
+      await handleNewChat();
+    }
+  };
+
+  const formatSessionDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return 'Today';
+    if (diffDays === 2) return 'Yesterday';
+    if (diffDays <= 7) return `${diffDays - 1} days ago`;
+    return date.toLocaleDateString();
   };
 
   const getWelcomeMessage = () => {
@@ -369,10 +431,92 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
 
   return (
     <div className="chatbot-page min-h-screen bg-gradient-to-br from-[var(--bg-dark)] to-[var(--bg-secondary)] relative">
+      {/* Sidebar Overlay */}
+      {showSidebar && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setShowSidebar(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`fixed left-0 top-0 h-full w-80 bg-[var(--glass-bg)] backdrop-blur-[30px] border-r border-[var(--glass-border)] z-50 transform transition-transform duration-300 ${
+        showSidebar ? 'translate-x-0' : '-translate-x-full'
+      } lg:translate-x-0 lg:relative lg:w-80`}>
+        <div className="p-4 border-b border-[var(--glass-border)]">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[var(--text-primary)] font-['Orbitron'] font-semibold text-lg">
+              Chat Sessions
+            </h2>
+            <button
+              onClick={() => setShowSidebar(false)}
+              className="lg:hidden p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <button
+            onClick={handleNewChat}
+            className="w-full p-3 bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white rounded-xl font-medium transition-all duration-200 hover:shadow-[0_4px_12px_rgba(0,212,170,0.3)] flex items-center justify-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            New Chat
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4">
+          {chatSessions.length === 0 ? (
+            <div className="text-center text-[var(--text-muted)] py-8">
+              <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p>No chat sessions yet</p>
+              <p className="text-xs mt-1">Start a new conversation</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {chatSessions.map((session) => (
+                <div
+                  key={session.id}
+                  onClick={() => handleLoadSession(session)}
+                  className={`p-3 rounded-xl cursor-pointer transition-all duration-200 group relative ${
+                    currentSessionId === session.id
+                      ? 'bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white'
+                      : 'bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-sm truncate mb-1">
+                        {session.title}
+                      </h3>
+                      <div className="flex items-center gap-2 text-xs opacity-70">
+                        <Clock className="w-3 h-3" />
+                        <span>{formatSessionDate(session.updated_at)}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => handleDeleteSession(session.id, e)}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[rgba(255,255,255,0.1)] rounded transition-all duration-200"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Header */}
-      <div className="header bg-[var(--glass-bg)] backdrop-blur-[30px] border-b border-[var(--glass-border)] p-4 sticky top-0 z-50">
+      <div className="header bg-[var(--glass-bg)] backdrop-blur-[30px] border-b border-[var(--glass-border)] p-4 sticky top-0 z-30 lg:ml-80">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowSidebar(true)}
+              className="lg:hidden p-2 bg-[rgba(255,255,255,0.1)] border border-[var(--glass-border)] rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.15)] transition-all duration-200"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
             <button
               onClick={onBack}
               className="back-btn p-2 bg-[rgba(255,255,255,0.1)] border border-[var(--glass-border)] rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.15)] transition-all duration-200"
@@ -383,7 +527,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
             <div>
               <h1 className="text-[var(--text-primary)] text-xl font-['Orbitron'] font-semibold flex items-center gap-2">
                 {getContextIcon()}
-                {getContextTitle()}
+                {currentSessionTitle || getContextTitle()}
               </h1>
               <p className="text-[var(--text-secondary)] text-sm">
                 AI-powered healthcare assistant
@@ -400,7 +544,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
       </div>
 
       {/* Chat Container */}
-      <div className="chat-container max-w-4xl mx-auto p-4 h-[calc(100vh-140px)] flex flex-col">
+      <div className="chat-container max-w-4xl mx-auto p-4 h-[calc(100vh-140px)] flex flex-col lg:ml-80">
         {/* Messages Area */}
         <div className="messages-area flex-1 overflow-y-auto mb-4 space-y-4 pr-2">
           {messages.map((message) => (
