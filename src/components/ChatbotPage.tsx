@@ -83,14 +83,6 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
       setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
-      
-      // If we have initial extracted text, send it automatically
-      if (initialExtractedText && !sessionId) {
-        // Wait a bit for the session to be created, then send the message
-        setTimeout(() => {
-          handleSendMessage();
-        }, 1000);
-      }
     };
 
     initializeChat();
@@ -448,13 +440,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      // Add prescription analysis prefix to the extracted text
-      const prefixedText = `Please analyze this prescription: ${initialExtractedText}`;
-      setExtractedText(prefixedText);
-      // Auto-send after a short delay to ensure UI is ready
-      setTimeout(() => {
-        handleSendMessage();
-      }, 500);
+      handleSendMessage();
     }
   };
 
