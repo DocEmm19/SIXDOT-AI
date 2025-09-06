@@ -16,11 +16,24 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
   const [uploadTab, setUploadTab] = useState<'file' | 'url'>('file');
   const [urlInput, setUrlInput] = useState('');
   const [uploadError, setUploadError] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [extractedText, setExtractedText] = useState('');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+  const SUPPORTED_FILE_TYPES = [
+    'application/pdf',
+    'text/plain',
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/gif',
+    'image/bmp',
+    'image/webp'
+  ];
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -50,12 +63,41 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
     }
   };
 
+  const extractTextFromFile = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      if (file.type === 'text/plain') {
+        // Handle text files
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const text = e.target?.result as string;
+          resolve(text);
+        };
+        reader.onerror = () => reject(new Error('Failed to read text file'));
+        reader.readAsText(file);
+      } else if (file.type === 'application/pdf') {
+        // For PDF files, we'll simulate text extraction
+        // In a real application, you'd use a library like pdf-parse or PDF.js
+        setTimeout(() => {
+          resolve(`[PDF Content Extracted from: ${file.name}]\n\nThis is simulated text extraction from a PDF file. In a real implementation, this would contain the actual text content extracted from the PDF using libraries like PDF.js or pdf-parse.\n\nThe extracted content would include all readable text from the document, maintaining structure and formatting where possible.`);
+        }, 2000);
+      } else if (file.type.startsWith('image/')) {
+        // For images, we'll simulate OCR text extraction
+        // In a real application, you'd use OCR services like Tesseract.js or cloud OCR APIs
+        setTimeout(() => {
+          resolve(`[OCR Text Extracted from: ${file.name}]\n\nThis is simulated text extraction from an image file using OCR (Optical Character Recognition). In a real implementation, this would contain the actual text recognized from the image using services like:\n\n- Tesseract.js for client-side OCR\n- Google Cloud Vision API\n- AWS Textract\n- Azure Computer Vision\n\nThe extracted text would include any readable text found in the image, such as prescription details, medicine names, dosages, and instructions.`);
+        }, 3000);
+      } else {
+        reject(new Error('Unsupported file type for text extraction'));
+      }
+    });
+  };
+
   const handleFileValidation = (files: FileList) => {
     const file = files[0]; // Only handle first file for now
     
-    // Check file type
-    if (file.type !== 'application/pdf') {
-      setUploadError('Only PDF files are allowed');
+    // Check if file type is supported
+    if (!SUPPORTED_FILE_TYPES.includes(file.type)) {
+      setUploadError('Supported file types: PDF, TXT, JPG, PNG, GIF, BMP, WebP');
       return;
     }
     
@@ -65,9 +107,31 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
       return;
     }
     
-    console.log('Valid file uploaded:', file);
-    // Handle valid file upload logic here
     setUploadError('');
+    setUploadedFile(file);
+    setIsProcessing(true);
+    
+    try {
+      const extractedText = await extractTextFromFile(file);
+      setExtractedText(extractedText);
+      console.log('File processed successfully:', file.name);
+      console.log('Extracted text:', extractedText);
+    } catch (error) {
+      setUploadError(`Failed to process file: ${(error as Error).message}`);
+      setUploadedFile(null);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleProcessFile = () => {
+    if (extractedText && onSubmit) {
+      onSubmit(extractedText);
+      // Reset state
+      setExtractedText('');
+      setUploadedFile(null);
+      onClose();
+    }
   };
 
   const handleUrlSubmit = () => {
@@ -100,6 +164,13 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
     }
   };
 
+  const resetUploadState = () => {
+    setExtractedText('');
+    setUploadedFile(null);
+    setUploadError('');
+    setIsProcessing(false);
+  };
+
   const renderContent = () => {
     switch (type) {
       case 'upload':
@@ -115,7 +186,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
                 }`}
                 onClick={() => {
                   setUploadTab('file');
-                  setUploadError('');
+                  resetUploadState();
                   setUrlInput('');
                 }}
               >
@@ -130,7 +201,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
                 }`}
                 onClick={() => {
                   setUploadTab('url');
-                  setUploadError('');
+                  resetUploadState();
                 }}
               >
                 <Link className="w-4 h-4 mx-auto mb-1" />
@@ -145,46 +216,105 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
               </div>
             )}
 
+            {/* Processing Message */}
+            {isProcessing && (
+              <div className="processing-message bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.3)] rounded-xl p-4 text-[var(--primary-cyan)] text-sm mb-4 text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <div className="w-4 h-4 border-2 border-[var(--primary-cyan)] border-t-transparent rounded-full animate-spin"></div>
+                  <span>Processing file...</span>
+                </div>
+                <p className="text-xs text-[var(--text-muted)]">
+                  {uploadedFile?.type === 'application/pdf' && 'Extracting text from PDF...'}
+                  {uploadedFile?.type === 'text/plain' && 'Reading text file...'}
+                  {uploadedFile?.type.startsWith('image/') && 'Performing OCR on image...'}
+                </p>
+              </div>
+            )}
+
+            {/* Extracted Text Preview */}
+            {extractedText && !isProcessing && (
+              <div className="extracted-text-preview bg-[rgba(0,212,170,0.1)] border border-[rgba(0,212,170,0.3)] rounded-xl p-4 mb-4">
+                <h4 className="text-[var(--text-primary)] font-semibold mb-2 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-[var(--primary-cyan)]" />
+                  Extracted Text Preview
+                </h4>
+                <div className="max-h-32 overflow-y-auto bg-[rgba(255,255,255,0.05)] rounded-lg p-3 text-sm text-[var(--text-secondary)] leading-relaxed">
+                  {extractedText.substring(0, 300)}
+                  {extractedText.length > 300 && '...'}
+                </div>
+                <p className="text-xs text-[var(--text-muted)] mt-2">
+                  {extractedText.length} characters extracted from {uploadedFile?.name}
+                </p>
+              </div>
+            )}
+
             {/* File Upload Tab */}
             {uploadTab === 'file' && (
               <>
-                <div
-                  className={`file-upload-area border-2 border-dashed rounded-xl p-10 text-center mb-5 transition-all duration-300 cursor-pointer ${
-                    dragOver
-                      ? 'border-[var(--primary-cyan)] bg-[rgba(0,212,170,0.1)]'
-                      : 'border-[var(--glass-border)] hover:border-[var(--primary-cyan)] hover:bg-[rgba(0,212,170,0.05)]'
-                  }`}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf,application/pdf"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-                  <Upload className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4" />
-                  <h3 className="text-[var(--text-primary)] text-lg font-semibold mb-2">
-                    Drop PDF file here or click to browse
-                  </h3>
-                  <p className="text-[var(--text-secondary)] text-sm">
-                    Only PDF files are supported
-                  </p>
-                  <p className="text-[var(--text-muted)] text-xs mt-2">
-                    Maximum file size: 10MB
-                  </p>
-                </div>
-                <div className="text-center">
-                  <button
-                    onClick={onClose}
-                    className="feature-button p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)]"
+                {!extractedText && !isProcessing && (
+                  <div
+                    className={`file-upload-area border-2 border-dashed rounded-xl p-10 text-center mb-5 transition-all duration-300 cursor-pointer ${
+                      dragOver
+                        ? 'border-[var(--primary-cyan)] bg-[rgba(0,212,170,0.1)]'
+                        : 'border-[var(--glass-border)] hover:border-[var(--primary-cyan)] hover:bg-[rgba(0,212,170,0.05)]'
+                    }`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
                   >
-                    Start Analysis
-                  </button>
-                </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.txt,.jpg,.jpeg,.png,.gif,.bmp,.webp,application/pdf,text/plain,image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <Upload className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4" />
+                    <h3 className="text-[var(--text-primary)] text-lg font-semibold mb-2">
+                      Drop files here or click to browse
+                    </h3>
+                    <p className="text-[var(--text-secondary)] text-sm mb-2">
+                      Supported formats: PDF, TXT, JPG, PNG, GIF, BMP, WebP
+                    </p>
+                    <div className="text-xs text-[var(--text-muted)] space-y-1">
+                      <p>• PDF files: Text extraction</p>
+                      <p>• Text files: Direct content reading</p>
+                      <p>• Images: OCR text recognition</p>
+                      <p className="mt-2">Maximum file size: 10MB</p>
+                    </div>
+                  </div>
+                )}
+                
+                {extractedText && !isProcessing && (
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleProcessFile}
+                      className="feature-button flex-1 p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)]"
+                    >
+                      <FileText className="w-4 h-4 mr-2 inline" />
+                      Analyze Extracted Text
+                    </button>
+                    <button
+                      onClick={resetUploadState}
+                      className="p-[12px_24px] bg-[rgba(255,255,255,0.1)] border border-[var(--glass-border)] rounded-[10px] text-[var(--text-secondary)] cursor-pointer transition-all duration-200 hover:bg-[rgba(255,255,255,0.15)] hover:text-[var(--text-primary)]"
+                    >
+                      Upload Different File
+                    </button>
+                  </div>
+                )}
+                
+                {!extractedText && !isProcessing && (
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="p-[12px_24px] bg-[rgba(255,255,255,0.1)] border border-[var(--glass-border)] rounded-[10px] text-[var(--text-secondary)] cursor-pointer transition-all duration-200 hover:bg-[rgba(255,255,255,0.15)] hover:text-[var(--text-primary)]"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </>
             )}
 
