@@ -189,11 +189,24 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
           throw new Error('Invalid username or password');
         }
 
+        // Ensure user has a valid ID, generate one if missing
+        let userId = user.id;
+        if (!userId) {
+          userId = crypto.randomUUID();
+          // Update the stored user with the new ID
+          const users = getStoredUsers();
+          const userIndex = users.findIndex(u => u.email.toLowerCase() === trimmedEmail.toLowerCase());
+          if (userIndex !== -1) {
+            users[userIndex].id = userId;
+            localStorage.setItem('medilens-users', JSON.stringify(users));
+          }
+        }
+
         setSuccessMessage('Login successful! Welcome back.');
         setShowSuccess(true);
 
         setTimeout(() => {
-          onLogin({ email: user.email, name: user.name, id: user.id });
+          onLogin({ email: user.email, name: user.name, id: userId });
         }, 1000);
 
       } else if (activeTab === 'reset') {
