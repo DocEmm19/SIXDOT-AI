@@ -13,6 +13,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
   const [dragOver, setDragOver] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [question, setQuestion] = useState('');
+  const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>('file');
+  const [documentUrl, setDocumentUrl] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
@@ -44,15 +46,9 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
   };
 
   const handleFiles = (files: FileList) => {
-    const maxSize = 200 * 1024 * 1024; // 200MB in bytes
+    const maxSize = 2 * 1024 * 1024; // 2MB in bytes
     const allowedTypes = [
-      'application/pdf',
-      'image/jpeg',
-      'image/jpg', 
-      'image/png',
-      'image/webp',
-      'image/bmp',
-      'image/tiff'
+      'application/pdf'
     ];
 
     const validFiles: File[] = [];
@@ -61,13 +57,13 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
     Array.from(files).forEach(file => {
       // Check file size
       if (file.size > maxSize) {
-        errors.push(`${file.name} exceeds 200MB limit`);
+        errors.push(`${file.name} exceeds 2MB limit`);
         return;
       }
 
       // Check file type
       if (!allowedTypes.includes(file.type)) {
-        errors.push(`${file.name} is not a supported file type`);
+        errors.push(`${file.name} is not a PDF file`);
         return;
       }
 
@@ -83,6 +79,16 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
       // Process valid files here
       // You can add your upload logic here
       alert(`Successfully selected ${validFiles.length} file(s) for upload`);
+    }
+  };
+
+  const handleUrlSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (documentUrl.trim()) {
+      console.log('Document URL:', documentUrl);
+      alert('URL submitted successfully for processing');
+      setDocumentUrl('');
+      onClose();
     }
   };
 
@@ -103,44 +109,112 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
       case 'upload':
         return (
           <>
-            <div
-              className={`file-upload-area border-2 border-dashed rounded-xl p-10 text-center mb-5 transition-all duration-300 cursor-pointer ${
-                dragOver
-                  ? 'border-[var(--primary-cyan)] bg-[rgba(0,212,170,0.1)]'
-                  : 'border-[var(--glass-border)] hover:border-[var(--primary-cyan)] hover:bg-[rgba(0,212,170,0.05)]'
-              }`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept=".pdf,.jpg,.jpeg,.png,.webp,.bmp,.tiff"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-              <Upload className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4" />
-              <h3 className="text-[var(--text-primary)] text-lg font-semibold mb-2">
-                Drop files here or click to browse
-              </h3>
-              <p className="text-[var(--text-secondary)] text-sm">
-                Supported formats: PDF, JPEG, PNG, WebP, BMP, TIFF
-              </p>
-              <p className="text-[var(--text-muted)] text-xs mt-2">
-                Maximum file size: 200MB per file
-              </p>
-            </div>
-            <div className="text-center">
-              <button
-                onClick={onClose}
-                className="feature-button p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)]"
+            {/* Upload Method Selection */}
+            <div className="upload-method-tabs grid grid-cols-2 bg-[rgba(255,255,255,0.05)] rounded-2xl p-1 mb-6 relative">
+              <div
+                className={`upload-tab p-3 text-center rounded-xl cursor-pointer transition-all duration-300 font-semibold text-sm uppercase relative z-[2] ${
+                  uploadMethod === 'file'
+                    ? 'bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white shadow-[0_8px_25px_rgba(0,212,170,0.3)]'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.08)]'
+                }`}
+                onClick={() => setUploadMethod('file')}
               >
-                Start Analysis
-              </button>
+                Upload File
+              </div>
+              <div
+                className={`upload-tab p-3 text-center rounded-xl cursor-pointer transition-all duration-300 font-semibold text-sm uppercase relative z-[2] ${
+                  uploadMethod === 'url'
+                    ? 'bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white shadow-[0_8px_25px_rgba(0,212,170,0.3)]'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.08)]'
+                }`}
+                onClick={() => setUploadMethod('url')}
+              >
+                Provide URL
+              </div>
             </div>
+
+            {uploadMethod === 'file' ? (
+              <>
+                <div
+                  className={`file-upload-area border-2 border-dashed rounded-xl p-10 text-center mb-5 transition-all duration-300 cursor-pointer ${
+                    dragOver
+                      ? 'border-[var(--primary-cyan)] bg-[rgba(0,212,170,0.1)]'
+                      : 'border-[var(--glass-border)] hover:border-[var(--primary-cyan)] hover:bg-[rgba(0,212,170,0.05)]'
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept=".pdf"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  <Upload className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4" />
+                  <h3 className="text-[var(--text-primary)] text-lg font-semibold mb-2">
+                    Drop PDF files here or click to browse
+                  </h3>
+                  <p className="text-[var(--text-secondary)] text-sm">
+                    Supported format: PDF only
+                  </p>
+                  <p className="text-[var(--text-muted)] text-xs mt-2">
+                    Maximum file size: 2MB per file
+                  </p>
+                </div>
+                <div className="text-center">
+                  <button
+                    onClick={onClose}
+                    className="feature-button p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)]"
+                  >
+                    Start Analysis
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <form onSubmit={handleUrlSubmit}>
+                  <div className="url-input-section mb-6">
+                    <h3 className="text-[var(--text-primary)] text-lg font-semibold mb-4 text-center">
+                      Provide Document URL
+                    </h3>
+                    <input
+                      type="url"
+                      value={documentUrl}
+                      onChange={(e) => setDocumentUrl(e.target.value)}
+                      placeholder="https://example.com/document.pdf"
+                      className="url-input w-full p-4 bg-[rgba(255,255,255,0.08)] border border-[var(--glass-border)] rounded-xl text-[var(--text-primary)] text-base mb-4 focus:outline-none focus:border-[var(--primary-cyan)] focus:shadow-[0_0_0_3px_rgba(0,212,170,0.15)] placeholder:text-[var(--text-muted)]"
+                      required
+                    />
+                    <p className="text-[var(--text-secondary)] text-sm text-center mb-4">
+                      Enter a direct link to a PDF document (must be publicly accessible)
+                    </p>
+                    <p className="text-[var(--text-muted)] text-xs text-center">
+                      Supported format: PDF only • Maximum size: 2MB
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      type="submit"
+                      disabled={!documentUrl.trim()}
+                      className="feature-button flex-1 p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Process URL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="p-[12px_24px] bg-[rgba(255,255,255,0.1)] border border-[var(--glass-border)] rounded-[10px] text-[var(--text-secondary)] cursor-pointer transition-all duration-200 hover:bg-[rgba(255,255,255,0.15)] hover:text-[var(--text-primary)]"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </>
         );
 
