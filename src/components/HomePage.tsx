@@ -253,13 +253,6 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
       />
 
       <Modal
-        isOpen={activeModal === 'search'}
-        onClose={() => setActiveModal(null)}
-        title="Medical Research Database"
-        type="search"
-      />
-
-      <Modal
         isOpen={activeModal === 'question'}
         onClose={() => setActiveModal(null)}
         title="AI Medical Consultation"
