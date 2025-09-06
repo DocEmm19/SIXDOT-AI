@@ -17,6 +17,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState<'auth' | 'home' | 'chatbot'>('auth');
   const [chatbotContext, setChatbotContext] = useState<'upload' | 'medicine-search' | 'question'>('question');
   const [chatSessionId, setChatSessionId] = useState<string | undefined>(undefined);
+  const [initialExtractedText, setInitialExtractedText] = useState<string>('');
 
   // Check for existing Supabase session on app load
   React.useEffect(() => {
@@ -49,6 +50,14 @@ function App() {
   const handleNavigateToChatbot = (context: 'upload' | 'medicine-search' | 'question') => {
     setChatbotContext(context);
     setChatSessionId(undefined); // Start new session
+    setInitialExtractedText(''); // Clear any previous extracted text
+    setCurrentPage('chatbot');
+  };
+
+  const handleNavigateToChatbotWithText = (context: 'upload' | 'medicine-search' | 'question', extractedText: string) => {
+    setChatbotContext(context);
+    setChatSessionId(undefined); // Start new session
+    setInitialExtractedText(extractedText); // Set extracted text
     setCurrentPage('chatbot');
   };
 
@@ -67,9 +76,15 @@ function App() {
             onBack={handleBackToHome}
             initialContext={chatbotContext}
             sessionId={chatSessionId}
+            initialExtractedText={initialExtractedText}
           />
         ) : currentUser && currentPage === 'home' ? (
-          <HomePage user={currentUser} onLogout={handleLogout} onNavigateToChatbot={handleNavigateToChatbot} />
+          <HomePage 
+            user={currentUser} 
+            onLogout={handleLogout} 
+            onNavigateToChatbot={handleNavigateToChatbot}
+            onNavigateToChatbotWithText={handleNavigateToChatbotWithText}
+          />
         ) : (
           <AuthPage onLogin={handleLogin} />
         )}

@@ -133,60 +133,34 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit, u
       return;
     }
 
-    // If Supabase is not configured, show a different message
-    if (!userEmail) {
-      const successMessage = `File processed successfully! Extracted ${extractedText.length} characters from ${uploadedFile?.name}. Note: Database storage is not available - please configure Supabase to save data permanently.`;
+    setIsSaving(true);
+
+    try {
+      // Save extracted text to Supabase if configured
+      if (userEmail) {
+        const result = await insertUserActivity({
+          user_email: userEmail,
+          extracted_text: extractedText,
+          analysis_result: '', // Will be populated later with AI analysis
+          file_name: uploadedFile?.name,
+          file_type: uploadedFile?.type,
+        });
+
+        if (result) {
+          console.log('Successfully saved extracted text to database:', result.id);
+        }
+      }
       
+      // Pass extracted text to parent component for chatbot navigation
       if (onSubmit) {
-        onSubmit(successMessage);
+        onSubmit(extractedText);
       }
       
       // Reset state and close modal
       setExtractedText('');
       setUploadedFile(null);
       onClose();
-      return;
-    }
-
-    setIsSaving(true);
-
-    try {
-      // Save extracted text to Supabase
-      const result = await insertUserActivity({
-        user_email: userEmail,
-        extracted_text: extractedText,
-        analysis_result: '', // Will be populated later with AI analysis
-        file_name: uploadedFile?.name,
-        file_type: uploadedFile?.type,
-      });
-
-      if (result) {
-        console.log('Successfully saved extracted text to database:', result.id);
-        
-        // Show success message
-        const successMessage = `File processed successfully! Extracted ${extractedText.length} characters from ${uploadedFile?.name}. Data saved to your activity history.`;
-        
-        if (onSubmit) {
-          onSubmit(successMessage);
-        }
-        
-        // Reset state and close modal
-        setExtractedText('');
-        setUploadedFile(null);
-        onClose();
-      } else {
-        // Handle case when Supabase is not configured
-        const warningMessage = `File processed successfully! Extracted ${extractedText.length} characters from ${uploadedFile?.name}. Note: Database storage is not available - please configure Supabase to save data permanently.`;
-        
-        if (onSubmit) {
-          onSubmit(warningMessage);
-        }
-        
-        // Reset state and close modal
-        setExtractedText('');
-        setUploadedFile(null);
-        onClose();
-      }
+      
     } catch (error) {
       console.error('Error saving extracted text:', error);
       setUploadError('Failed to save extracted text. Please try again.');

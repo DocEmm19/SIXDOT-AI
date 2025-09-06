@@ -29,14 +29,15 @@ interface ChatbotPageProps {
   onBack: () => void;
   initialContext: 'upload' | 'medicine-search' | 'question';
   sessionId?: string;
+  initialExtractedText?: string;
 }
 
-const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext, sessionId }) => {
+const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext, sessionId, initialExtractedText = '' }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(sessionId || null);
-  const [extractedText, setExtractedText] = useState<string>('');
+  const [extractedText, setExtractedText] = useState<string>(initialExtractedText);
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [showSidebar, setShowSidebar] = useState(false);
   const [currentSessionTitle, setCurrentSessionTitle] = useState<string>('');
@@ -82,10 +83,17 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
       setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
+      
+      // If we have initial extracted text, send it automatically
+      if (initialExtractedText && !sessionId) {
+        // Wait a bit for the session to be created, then send the message
+        setTimeout(() => {
+          handleSendMessage();
+        }, 1000);
+      }
     };
 
     initializeChat();
-  }, [initialContext, sessionId]);
 
   const loadChatSessions = async () => {
     const sessions = await getChatSessions();
