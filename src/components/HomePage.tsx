@@ -303,58 +303,24 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
             <h2 className="answers-title font-['Orbitron'] text-[1.8rem] font-semibold text-[var(--text-primary)] mb-2">
               Recent Questions & Answers
             </h2>
+            <button className="feature-button p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)]">
+              Ask AI
+            </button>
+          </div>
+        </div>
+
+        {/* Answers Section */}
+        <div className="answers-section bg-[var(--glass-bg)] backdrop-blur-[20px] border border-[var(--glass-border)] rounded-[20px] p-8">
+          <div className="answers-header text-center mb-8">
+            <h2 className="answers-title font-['Orbitron'] text-[1.8rem] font-semibold text-[var(--text-primary)] mb-2">
+              Recent Questions & Answers
+            </h2>
             <p className="answers-subtitle text-[var(--text-secondary)]">
               Your latest health and medication questions
             </p>
           </div>
-
-          {answers.length === 0 ? (
-            <div className="no-answers text-center py-12">
-              <MessageSquare className="w-16 h-16 text-[var(--text-muted)] mx-auto mb-4" />
-              <p className="text-[var(--text-muted)] text-lg">No questions asked yet</p>
-              <p className="text-[var(--text-muted)] text-sm mt-2">
-                Click "Ask Questions" above to get started
-              </p>
-            </div>
-          ) : (
-            <div className="answers-list space-y-6">
-              {answers.map((answer) => (
-                <div key={answer.id} className="answer-card bg-[rgba(255,255,255,0.05)] rounded-xl p-6">
-                  <div className="answer-header mb-4">
-                    <h3 className="question-text font-semibold text-[var(--text-primary)] mb-2">
-                      Q: {answer.question}
-                    </h3>
-                    <p className="timestamp text-[var(--text-muted)] text-xs">
-                      {answer.timestamp.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="answer-content">
-                    <p className="response-text text-[var(--text-secondary)] leading-relaxed">
-                      A: {answer.response}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
-
-      {/* Modals */}
-      <Modal
-        isOpen={activeModal === 'upload'}
-        onClose={() => setActiveModal(null)}
-        title="Upload Medical Files"
-        type="upload"
-      />
-
-      <Modal
-        isOpen={activeModal === 'question'}
-        onClose={() => setActiveModal(null)}
-        title="Ask a Question"
-        type="question"
-        onSubmit={handleAskQuestion}
-      />
     </div>
   );
 };
