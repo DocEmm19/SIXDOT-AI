@@ -159,13 +159,6 @@ export const createChatSession = async (data: {
     return null;
   }
 
-  // Get current authenticated user
-  const user = await getCurrentUser();
-  if (!user) {
-    console.error('User not authenticated');
-    return null;
-  }
-
   try {
     const { data: result, error } = await supabase
       .from('chat_sessions')
