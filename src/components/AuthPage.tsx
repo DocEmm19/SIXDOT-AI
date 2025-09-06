@@ -13,6 +13,7 @@ interface StoredUser {
   email: string;
   name: string;
   password: string;
+  id: string;
 }
 
 const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
@@ -157,14 +158,19 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
         }
 
         // Create new user
-        const newUser: StoredUser = { email: trimmedEmail, name: trimmedName, password };
+        const newUser: StoredUser = { 
+          email: trimmedEmail, 
+          name: trimmedName, 
+          password,
+          id: crypto.randomUUID()
+        };
         saveUser(newUser);
 
         setSuccessMessage('Account created successfully! You are now logged in.');
         setShowSuccess(true);
 
         setTimeout(() => {
-          onLogin({ email: trimmedEmail, name: trimmedName });
+          onLogin({ email: trimmedEmail, name: trimmedName, id: newUser.id });
         }, 1500);
 
       } else if (activeTab === 'login') {
@@ -187,7 +193,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
         setShowSuccess(true);
 
         setTimeout(() => {
-          onLogin({ email: user.email, name: user.name });
+          onLogin({ email: user.email, name: user.name, id: user.id });
         }, 1000);
 
       } else if (activeTab === 'reset') {

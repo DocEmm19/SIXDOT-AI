@@ -8,6 +8,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 export interface User {
   email: string;
   name: string;
+  id: string;
 }
 
 function App() {

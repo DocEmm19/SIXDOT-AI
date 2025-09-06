@@ -79,14 +79,13 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
   }, [initialContext]);
 
   const loadChatSessions = async () => {
-    const sessions = await getChatSessions(user.email);
+    const sessions = await getChatSessions(user.id);
     setChatSessions(sessions);
   };
 
   const createNewChatSession = async () => {
-    // Get user profile ID from email (assuming profiles table exists)
     const session = await createChatSession({
-      user_id: user.email, // Using email as user_id for now
+      user_id: user.id,
       context: initialContext,
       title: getContextTitle()
     });
