@@ -2,15 +2,10 @@ import React, { useState } from 'react';
 import MedicalLogo from './MedicalLogo';
 import { User } from '../App';
 import ThemeToggle from './ThemeToggle';
+import { signUp, signIn, signOut, resetPassword } from '../lib/supabase';
 
 interface AuthPageProps {
   onLogin: (user: User) => void;
-}
-
-interface StoredUser {
-  email: string;
-  name: string;
-  password: string;
 }
 
 const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
@@ -21,48 +16,10 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Get stored users from localStorage
-  const getStoredUsers = (): StoredUser[] => {
-    const users = localStorage.getItem('medilens-users');
-    return users ? JSON.parse(users) : [];
-  };
-
-  // Save user to localStorage
-  const saveUser = (user: StoredUser) => {
-    const users = getStoredUsers();
-    users.push(user);
-    localStorage.setItem('medilens-users', JSON.stringify(users));
-  };
-
-  // Find user by email
-  const findUser = (email: string): StoredUser | undefined => {
-    const users = getStoredUsers();
-    return users.find(user => user.email.toLowerCase() === email.toLowerCase());
-  };
-
-  // Update user password
-  const updateUserPassword = (email: string, newPassword: string) => {
-    const users = getStoredUsers();
-    const userIndex = users.findIndex(user => user.email.toLowerCase() === email.toLowerCase());
-    if (userIndex !== -1) {
-      users[userIndex].password = newPassword;
-      localStorage.setItem('medilens-users', JSON.stringify(users));
-    }
-  };
-
   // Password validation
   const validatePassword = (password: string): { isValid: boolean; message: string } => {
     if (password.length < 6) {
       return { isValid: false, message: 'Password must be at least 6 characters long' };
-    }
-    if (!/(?=.*[a-z])/.test(password)) {
-      return { isValid: false, message: 'Password must contain at least one lowercase letter' };
-    }
-    if (!/(?=.*[A-Z])/.test(password)) {
-      return { isValid: false, message: 'Password must contain at least one uppercase letter' };
-    }
-    if (!/(?=.*\d)/.test(password)) {
-      return { isValid: false, message: 'Password must contain at least one number' };
     }
     return { isValid: true, message: '' };
   };
@@ -87,9 +44,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
     const name = (formData.get('name') as string)?.trim();
     const confirmPassword = formData.get('confirmPassword') as string;
 
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
     try {
       if (activeTab === 'signup') {
         // Signup validation
@@ -110,22 +64,21 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
           throw new Error('Passwords do not match');
         }
 
-        // Check if user already exists
-        const existingUser = findUser(email);
-        if (existingUser) {
-          throw new Error('An account with this email already exists');
+        // Create new user with Supabase
+        const { user } = await signUp(email, password, name);
+        
+        if (!user) {
+          throw new Error('Failed to create account');
         }
 
-        // Create new user
-        const newUser: StoredUser = { email, name, password };
-        saveUser(newUser);
-
-        setSuccessMessage('Account created successfully! You are now logged in.');
+        setSuccessMessage('Account created successfully! Please check your email to verify your account.');
         setShowSuccess(true);
 
+        // Note: User will need to verify email before they can log in
         setTimeout(() => {
-          onLogin({ email, name });
-        }, 1500);
+          setActiveTab('login');
+          setShowSuccess(false);
+        }, 3000);
 
       } else if (activeTab === 'login') {
         // Login validation
@@ -137,53 +90,48 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
           throw new Error('Please enter your password');
         }
 
-        // Check credentials
-        const user = findUser(email);
-        if (!user || user.password !== password) {
-          throw new Error('Invalid username or password');
+        // Sign in with Supabase
+        const { user } = await signIn(email, password);
+        
+        if (!user) {
+          throw new Error('Failed to sign in');
         }
 
         setSuccessMessage('Login successful! Welcome back.');
         setShowSuccess(true);
 
-        setTimeout(() => {
-          onLogin({ email: user.email, name: user.name });
-        }, 1000);
+        // The auth state change listener in App.tsx will handle the login
 
       } else if (activeTab === 'reset') {
-        // Password reset
+        // Password reset - just send reset email
         if (!validateEmail(email)) {
           throw new Error('Please enter a valid email address');
         }
 
-        const user = findUser(email);
-        if (!user) {
-          throw new Error('No account found with this email address');
-        }
+        // Send password reset email
+        await resetPassword(email);
 
-        const passwordValidation = validatePassword(password);
-        if (!passwordValidation.isValid) {
-          throw new Error(passwordValidation.message);
-        }
-
-        if (password !== confirmPassword) {
-          throw new Error('Passwords do not match');
-        }
-
-        // Update password
-        updateUserPassword(email, password);
-
-        setSuccessMessage('Password reset successfully! You can now log in with your new password.');
+        setSuccessMessage('Password reset email sent! Please check your inbox and follow the instructions.');
         setShowSuccess(true);
 
         setTimeout(() => {
           setActiveTab('login');
           setShowSuccess(false);
-        }, 2000);
+        }, 3000);
       }
 
     } catch (error) {
-      setErrorMessage((error as Error).message);
+      const message = (error as Error).message;
+      // Handle specific Supabase error messages
+      if (message.includes('User already registered')) {
+        setErrorMessage('An account with this email already exists. Please try logging in instead.');
+      } else if (message.includes('Invalid login credentials')) {
+        setErrorMessage('Invalid email or password. Please check your credentials and try again.');
+      } else if (message.includes('Email not confirmed')) {
+        setErrorMessage('Please check your email and click the verification link before logging in.');
+      } else {
+        setErrorMessage(message);
+      }
       setShowError(true);
     }
 
@@ -209,7 +157,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
     switch (activeTab) {
       case 'login': return 'Sign in to your MediLens account';
       case 'signup': return 'Create your healthcare AI account';
-      case 'reset': return 'Enter your email and new password';
+      case 'reset': return 'Enter your email to receive reset instructions';
       default: return '';
     }
   };
@@ -329,12 +277,12 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
               type="password"
               name="password"
               className="form-input w-full p-[14px_16px] bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.12)] rounded-xl text-[var(--text-primary)] text-sm transition-all duration-300 cubic-bezier-[0.4,0,0.2,1] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary-cyan)] focus:shadow-[0_0_0_3px_rgba(0,212,170,0.15)] focus:bg-[rgba(255,255,255,0.12)]"
-              placeholder={activeTab === 'reset' ? 'New Password' : 'Password'}
+              placeholder="Password"
               required
             />
           </div>
 
-          {(activeTab === 'signup' || activeTab === 'reset') && (
+          {activeTab === 'signup' && (
             <div className="form-group mb-[18px]">
               <input
                 type="password"
@@ -351,9 +299,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
               <p className="mb-1">Password must contain:</p>
               <ul className="list-disc list-inside space-y-1">
                 <li>At least 6 characters</li>
-                <li>One uppercase letter</li>
-                <li>One lowercase letter</li>
-                <li>One number</li>
               </ul>
             </div>
           )}
@@ -365,7 +310,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
           >
             {activeTab === 'login' && 'LOG IN'}
             {activeTab === 'signup' && 'CREATE ACCOUNT'}
-            {activeTab === 'reset' && 'RESET PASSWORD'}
+            {activeTab === 'reset' && 'SEND RESET EMAIL'}
             {isLoading && (
               <div className="loading w-[18px] h-[18px] border-2 border-[rgba(255,255,255,0.3)] border-t-white rounded-full animate-spin ml-2"></div>
             )}

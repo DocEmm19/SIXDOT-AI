@@ -1,43 +1,70 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import { LogOut, Brain, Shield, Zap, Upload, Search, MessageSquare, FileText, Activity } from 'lucide-react';
 import MedicalLogo from './MedicalLogo';
 import { User } from '../App';
 import Modal from './Modal';
 import ThemeToggle from './ThemeToggle';
+import { signOut, createConsultation, getConsultations, Consultation } from '../lib/supabase';
 
 interface HomePageProps {
   user: User;
   onLogout: () => void;
 }
 
-interface Answer {
-  id: string;
-  question: string;
-  response: string;
-  timestamp: Date;
-}
-
 const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
-  const [answers, setAnswers] = useState<Answer[]>([]);
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadConsultations();
+  }, [user.id]);
+
+  const loadConsultations = async () => {
+    try {
+      const data = await getConsultations(user.id);
+      setConsultations(data);
+    } catch (error) {
+      console.error('Error loading consultations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleFeatureClick = (feature: string) => {
     setActiveModal(feature);
   };
 
-  const handleAskQuestion = (question: string) => {
-    // Simulate AI response
-    const response = `Based on your query about "${question}", our AI analysis suggests comprehensive evaluation and monitoring. This is a simulated response for demonstration purposes.`;
-    
-    const newAnswer: Answer = {
-      id: Date.now().toString(),
-      question,
-      response,
-      timestamp: new Date()
-    };
+  const handleAskQuestion = async (question: string) => {
+    try {
+      // Simulate AI response
+      const response = `Based on your query about "${question}", our AI analysis suggests comprehensive evaluation and monitoring. This is a simulated response for demonstration purposes.`;
+      
+      const consultation = await createConsultation({
+        user_id: user.id,
+        question,
+        response,
+        type: 'question'
+      });
 
-    setAnswers(prev => [newAnswer, ...prev]);
-    setActiveModal(null);
+      setConsultations(prev => [consultation, ...prev]);
+      setActiveModal(null);
+    } catch (error) {
+      console.error('Error creating consultation:', error);
+      // You might want to show an error message to the user here
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      onLogout();
+    } catch (error) {
+      console.error('Error signing out:', error);
+      // Fallback: still call onLogout even if Supabase signout fails
+      onLogout();
+    }
   };
 
   return (
@@ -56,7 +83,7 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
           </div>
           <ThemeToggle />
           <button
-            onClick={onLogout}
+            onClick={handleLogout}
             className="logout-btn p-[8px_16px] bg-[rgba(255,255,255,0.1)] border border-[var(--glass-border)] rounded-lg text-[var(--text-secondary)] cursor-pointer transition-all duration-200 hover:bg-[rgba(255,255,255,0.15)] hover:text-[var(--text-primary)]"
           >
             <LogOut className="w-4 h-4" />
@@ -144,21 +171,26 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
           </div>
 
           <div className="answers-content max-h-[400px] overflow-y-auto py-5">
-            {answers.length === 0 ? (
-              <div className="no-answers text-center text-[var(--text-muted)] italic p-10">
+            {loading ? (
+              <div className="text-center p-10">
+                <div className="loading w-6 h-6 border-2 border-[var(--text-muted)] border-t-[var(--primary-cyan)] rounded-full animate-spin mx-auto mb-2"></div>
+                <p className="text-[var(--text-muted)] text-sm">Loading consultations...</p>
+              </div>
+            ) : consultations.length === 0 ? (
+              <div className="no-consultations text-center text-[var(--text-muted)] italic p-10">
                 No consultations yet. Start by asking the AI a medical question or uploading files for analysis.
               </div>
             ) : (
-              answers.map((answer) => (
-                <div key={answer.id} className="answer-item bg-[rgba(255,255,255,0.05)] rounded-xl p-5 mb-4 border-l-4 border-[var(--primary-cyan)]">
+              consultations.map((consultation) => (
+                <div key={consultation.id} className="consultation-item bg-[rgba(255,255,255,0.05)] rounded-xl p-5 mb-4 border-l-4 border-[var(--primary-cyan)]">
                   <div className="answer-question font-semibold text-[var(--text-primary)] mb-2">
-                    Q: {answer.question}
+                    Q: {consultation.question}
                   </div>
                   <div className="answer-response text-[var(--text-secondary)] leading-[1.6]">
-                    A: {answer.response}
+                    A: {consultation.response}
                   </div>
                   <div className="answer-time text-xs text-[var(--text-muted)] mt-2">
-                    {answer.timestamp.toLocaleString()}
+                    {new Date(consultation.created_at).toLocaleString()}
                   </div>
                 </div>
               ))
