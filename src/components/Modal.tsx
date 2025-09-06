@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, Search, MessageSquare, Link, FileText } from 'lucide-react';
+import { createWorker } from 'tesseract.js';
 
 interface ModalProps {
   isOpen: boolean;
@@ -7,9 +8,10 @@ interface ModalProps {
   title: string;
   type: 'upload' | 'medicine-search' | 'question';
   onSubmit?: (data: string) => void;
+  userEmail?: string;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit, userEmail }) => {
   const [dragOver, setDragOver] = useState(false);
   const [medicineQuery, setMedicineQuery] = useState('');
   const [question, setQuestion] = useState('');
@@ -19,6 +21,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedText, setExtractedText] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
@@ -81,11 +84,30 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
           resolve(`[PDF Content Extracted from: ${file.name}]\n\nThis is simulated text extraction from a PDF file. In a real implementation, this would contain the actual text content extracted from the PDF using libraries like PDF.js or pdf-parse.\n\nThe extracted content would include all readable text from the document, maintaining structure and formatting where possible.`);
         }, 2000);
       } else if (file.type.startsWith('image/')) {
-        // For images, we'll simulate OCR text extraction
-        // In a real application, you'd use OCR services like Tesseract.js or cloud OCR APIs
-        setTimeout(() => {
-          resolve(`[OCR Text Extracted from: ${file.name}]\n\nThis is simulated text extraction from an image file using OCR (Optical Character Recognition). In a real implementation, this would contain the actual text recognized from the image using services like:\n\n- Tesseract.js for client-side OCR\n- Google Cloud Vision API\n- AWS Textract\n- Azure Computer Vision\n\nThe extracted text would include any readable text found in the image, such as prescription details, medicine names, dosages, and instructions.`);
-        }, 3000);
+        // Real OCR implementation using Tesseract.js
+        const performOCR = async () => {
+          try {
+            const worker = await createWorker('eng');
+            const { data: { text } } = await worker.recognize(file);
+            await worker.terminate();
+            
+            if (!text || text.trim().length === 0) {
+              throw new Error('No text could be extracted from the image. Please ensure the image is clear and contains readable text.');
+            }
+            
+            // Clean up common OCR artifacts
+            const cleanedText = text
+              .replace(/\n\s*\n/g, '\n') // Remove multiple empty lines
+              .replace(/[^\w\s\-.,;:()\[\]]/g, '') // Remove unusual characters
+              .trim();
+            
+            resolve(cleanedText);
+          } catch (error) {
+            reject(new Error(`OCR processing failed: ${(error as Error).message}`));
+          }
+        };
+        
+        performOCR();
       } else {
         reject(new Error('Unsupported file type for text extraction'));
       }
@@ -124,7 +146,34 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
     }
   };
 
-  const handleProcessFile = () => {
+  const handleProcessFile = async () => {
+    if (!extractedText) {
+      console.error('Missing extracted text');
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      // Pass extracted text to parent component for chatbot navigation
+      if (onSubmit) {
+        onSubmit(extractedText);
+      }
+      
+      // Reset state and close modal
+      setExtractedText('');
+      setUploadedFile(null);
+      onClose();
+      
+    } catch (error) {
+      console.error('Error saving extracted text:', error);
+      setUploadError('Failed to save extracted text. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleProcessFileOriginal = () => {
     if (extractedText && onSubmit) {
       onSubmit(extractedText);
       // Reset state
@@ -143,9 +192,16 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
     // Basic URL validation
     try {
       new URL(urlInput.trim());
-      console.log('URL submitted:', urlInput.trim());
-      // Handle URL processing logic here
+      
+      // Create prefixed URL text for analysis
+      const prefixedUrlText = `Please analyze the prescription at this URL: ${urlInput.trim()}`;
+      
+      if (onSubmit) {
+        onSubmit(prefixedUrlText);
+      }
+      
       setUploadError('');
+      setUrlInput('');
       onClose();
     } catch (error) {
       setUploadError('Please enter a valid URL');
@@ -290,14 +346,25 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
                   <div className="flex gap-3">
                     <button
                       onClick={handleProcessFile}
-                      className="feature-button flex-1 p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)]"
+                      disabled={isSaving}
+                      className="feature-button flex-1 p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                      <FileText className="w-4 h-4 mr-2 inline" />
-                      Analyze Extracted Text
+                      {isSaving ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="w-4 h-4" />
+                          Analyze Extracted Text
+                        </>
+                      )}
                     </button>
                     <button
                       onClick={resetUploadState}
-                      className="p-[12px_24px] bg-[rgba(255,255,255,0.1)] border border-[var(--glass-border)] rounded-[10px] text-[var(--text-secondary)] cursor-pointer transition-all duration-200 hover:bg-[rgba(255,255,255,0.15)] hover:text-[var(--text-primary)]"
+                      disabled={isSaving}
+                      className="p-[12px_24px] bg-[rgba(255,255,255,0.1)] border border-[var(--glass-border)] rounded-[10px] text-[var(--text-secondary)] cursor-pointer transition-all duration-200 hover:bg-[rgba(255,255,255,0.15)] hover:text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Upload Different File
                     </button>
