@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import MedicalLogo from './MedicalLogo';
 import { User } from '../App';
 import ThemeToggle from './ThemeToggle';
@@ -20,6 +21,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Get stored users from localStorage
   const getStoredUsers = (): StoredUser[] => {
