@@ -92,7 +92,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
     });
   };
 
-  const handleFileValidation = (files: FileList) => {
+  const handleFileValidation = async (files: FileList) => {
     const file = files[0]; // Only handle first file for now
     
     // Check if file type is supported
