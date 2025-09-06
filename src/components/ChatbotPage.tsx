@@ -436,7 +436,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
   };
 
   return (
-    <div className="chatbot-page min-h-screen bg-gradient-to-br from-[var(--bg-dark)] to-[var(--bg-secondary)] relative">
+    <div className="chatbot-page min-h-screen bg-gradient-to-br from-[var(--bg-dark)] to-[var(--bg-secondary)] flex">
       {/* Sidebar Overlay */}
       {showSidebar && (
         <div 
@@ -446,9 +446,9 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
       )}
 
       {/* Sidebar */}
-      <div className={`fixed left-0 top-0 h-full w-80 bg-[var(--glass-bg)] backdrop-blur-[30px] border-r border-[var(--glass-border)] z-50 transform transition-transform duration-300 ${
+      <div className={`fixed lg:relative left-0 top-0 h-full w-80 bg-[var(--glass-bg)] backdrop-blur-[30px] border-r border-[var(--glass-border)] z-50 transform transition-transform duration-300 ${
         showSidebar ? 'translate-x-0' : '-translate-x-full'
-      } lg:translate-x-0 lg:relative lg:w-80`}>
+      } lg:translate-x-0 lg:flex-shrink-0`}>
         <div className="p-4 border-b border-[var(--glass-border)]">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-[var(--text-primary)] font-['Orbitron'] font-semibold text-lg">
@@ -513,124 +513,127 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
         </div>
       </div>
 
-      {/* Header */}
-      <div className="header bg-[var(--glass-bg)] backdrop-blur-[30px] border-b border-[var(--glass-border)] p-4 sticky top-0 z-30 lg:ml-80">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setShowSidebar(true)}
-              className="lg:hidden p-2 bg-[rgba(255,255,255,0.1)] border border-[var(--glass-border)] rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.15)] transition-all duration-200"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            <button
-              onClick={onBack}
-              className="back-btn p-2 bg-[rgba(255,255,255,0.1)] border border-[var(--glass-border)] rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.15)] transition-all duration-200"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <MedicalLogo size={40} />
-            <div>
-              <h1 className="text-[var(--text-primary)] text-xl font-['Orbitron'] font-semibold flex items-center gap-2">
-                {getContextIcon()}
-                {currentSessionTitle || getContextTitle()}
-              </h1>
-              <p className="text-[var(--text-secondary)] text-sm">
-                AI-powered healthcare assistant
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="text-[var(--text-secondary)] text-sm">
-              {user.name}
-            </div>
-            <ThemeToggle />
-          </div>
-        </div>
-      </div>
-
-      {/* Chat Container */}
-      <div className="chat-container max-w-4xl mx-auto p-4 h-[calc(100vh-140px)] flex flex-col lg:ml-80">
-        {/* Messages Area */}
-        <div className="messages-area flex-1 overflow-y-auto mb-4 space-y-4 pr-2">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`message-wrapper flex ${
-                message.type === 'user' ? 'justify-end' : 'justify-start'
-              }`}
-            >
-              <div
-                className={`message max-w-[80%] p-4 rounded-2xl ${
-                  message.type === 'user'
-                    ? 'bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white ml-12'
-                    : 'bg-[var(--glass-bg)] backdrop-blur-[20px] border border-[var(--glass-border)] text-[var(--text-primary)] mr-12'
-                }`}
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col min-h-screen">
+        {/* Header */}
+        <div className="header bg-[var(--glass-bg)] backdrop-blur-[30px] border-b border-[var(--glass-border)] p-4 sticky top-0 z-30">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setShowSidebar(true)}
+                className="lg:hidden p-2 bg-[rgba(255,255,255,0.1)] border border-[var(--glass-border)] rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.15)] transition-all duration-200"
               >
-                <div className="message-header flex items-center gap-2 mb-2">
-                  {message.type === 'user' ? (
-                    <User className="w-4 h-4" />
-                  ) : (
-                    <Bot className="w-4 h-4 text-[var(--primary-cyan)]" />
-                  )}
-                  <span className="text-sm font-medium">
-                    {message.type === 'user' ? 'You' : 'MediLens AI'}
-                  </span>
-                  <span className="text-xs opacity-70 ml-auto">
-                    {message.timestamp.toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
-                  </span>
-                </div>
-                <div className="message-content">
-                  {message.isLoading ? (
-                    <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Thinking...</span>
-                    </div>
-                  ) : (
-                    <div className="whitespace-pre-wrap leading-relaxed">
-                      {message.content}
-                    </div>
-                  )}
-                </div>
+                <Menu className="w-5 h-5" />
+              </button>
+              <button
+                onClick={onBack}
+                className="back-btn p-2 bg-[rgba(255,255,255,0.1)] border border-[var(--glass-border)] rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.15)] transition-all duration-200"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <MedicalLogo size={40} />
+              <div>
+                <h1 className="text-[var(--text-primary)] text-xl font-['Orbitron'] font-semibold flex items-center gap-2">
+                  {getContextIcon()}
+                  {currentSessionTitle || getContextTitle()}
+                </h1>
+                <p className="text-[var(--text-secondary)] text-sm">
+                  AI-powered healthcare assistant
+                </p>
               </div>
             </div>
-          ))}
-          <div ref={messagesEndRef} />
+            <div className="flex items-center gap-3">
+              <div className="text-[var(--text-secondary)] text-sm">
+                {user.name}
+              </div>
+              <ThemeToggle />
+            </div>
+          </div>
         </div>
 
-        {/* Input Area */}
-        <div className="input-area bg-[var(--glass-bg)] backdrop-blur-[20px] border border-[var(--glass-border)] rounded-2xl p-4">
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <input
-                ref={inputRef}
-                type="text"
-                value={extractedText || inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={extractedText ? 'Text extracted from file - press Enter to send' : `Ask about ${getContextTitle().toLowerCase()}...`}
-                className="w-full p-3 bg-[rgba(255,255,255,0.08)] border border-[var(--glass-border)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary-cyan)] focus:shadow-[0_0_0_3px_rgba(0,212,170,0.15)] resize-none"
-                disabled={isLoading}
-                readOnly={!!extractedText}
-              />
-            </div>
-            <button
-              onClick={handleSendMessage}
-              disabled={(!inputMessage.trim() && !extractedText) || isLoading}
-              className="send-btn p-3 bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white rounded-xl hover:shadow-[0_4px_12px_rgba(0,212,170,0.3)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:transform hover:-translate-y-1"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Send className="w-5 h-5" />
-              )}
-            </button>
+        {/* Chat Container */}
+        <div className="chat-container flex-1 flex flex-col p-4 max-w-4xl mx-auto w-full">
+          {/* Messages Area */}
+          <div className="messages-area flex-1 overflow-y-auto mb-4 space-y-4 pr-2">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`message-wrapper flex ${
+                  message.type === 'user' ? 'justify-end' : 'justify-start'
+                }`}
+              >
+                <div
+                  className={`message max-w-[80%] p-4 rounded-2xl ${
+                    message.type === 'user'
+                      ? 'bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white ml-12'
+                      : 'bg-[var(--glass-bg)] backdrop-blur-[20px] border border-[var(--glass-border)] text-[var(--text-primary)] mr-12'
+                  }`}
+                >
+                  <div className="message-header flex items-center gap-2 mb-2">
+                    {message.type === 'user' ? (
+                      <User className="w-4 h-4" />
+                    ) : (
+                      <Bot className="w-4 h-4 text-[var(--primary-cyan)]" />
+                    )}
+                    <span className="text-sm font-medium">
+                      {message.type === 'user' ? 'You' : 'MediLens AI'}
+                    </span>
+                    <span className="text-xs opacity-70 ml-auto">
+                      {message.timestamp.toLocaleTimeString([], { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </span>
+                  </div>
+                  <div className="message-content">
+                    {message.isLoading ? (
+                      <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Thinking...</span>
+                      </div>
+                    ) : (
+                      <div className="whitespace-pre-wrap leading-relaxed">
+                        {message.content}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
           </div>
-          <div className="mt-2 text-xs text-[var(--text-muted)] text-center">
-            Press Enter to send • Upload files for OCR text extraction • This AI provides educational information only
+
+          {/* Input Area */}
+          <div className="input-area bg-[var(--glass-bg)] backdrop-blur-[20px] border border-[var(--glass-border)] rounded-2xl p-4">
+            <div className="flex items-end gap-3">
+              <div className="flex-1">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={extractedText || inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder={extractedText ? 'Text extracted from file - press Enter to send' : `Ask about ${getContextTitle().toLowerCase()}...`}
+                  className="w-full p-3 bg-[rgba(255,255,255,0.08)] border border-[var(--glass-border)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary-cyan)] focus:shadow-[0_0_0_3px_rgba(0,212,170,0.15)] resize-none"
+                  disabled={isLoading}
+                  readOnly={!!extractedText}
+                />
+              </div>
+              <button
+                onClick={handleSendMessage}
+                disabled={(!inputMessage.trim() && !extractedText) || isLoading}
+                className="send-btn p-3 bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white rounded-xl hover:shadow-[0_4px_12px_rgba(0,212,170,0.3)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:transform hover:-translate-y-1"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+            <div className="mt-2 text-xs text-[var(--text-muted)] text-center">
+              Press Enter to send • Upload files for OCR text extraction • This AI provides educational information only
+            </div>
           </div>
         </div>
       </div>
