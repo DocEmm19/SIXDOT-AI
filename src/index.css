@@ -251,6 +251,113 @@ body {
 .particle3 { top: 70%; left: 20%; animation-delay: 4s; }
 .particle4 { top: 50%; right: 10%; animation-delay: 1s; }
 
+/* Interactive Tutorial Styles */
+
+/* Welcome Modal Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInScale {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slideInScale {
+  animation: slideInScale 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Welcome Modal Responsive */
+@media (max-width: 640px) {
+  .welcome-modal-content {
+    margin: 1rem;
+    max-width: calc(100vw - 2rem);
+  }
+  
+  .welcome-modal-content .inner-content {
+    padding: 1.5rem;
+  }
+  
+  .welcome-title {
+    font-size: 1.75rem !important;
+  }
+  
+  .features-title {
+    font-size: 1.25rem !important;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .action-buttons button {
+    width: 100%;
+  }
+}
+
+.tutorial-overlay {
+  backdrop-filter: blur(2px);
+}
+
+.tutorial-popup {
+  animation: tutorialSlideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tutorial-arrow {
+  animation: tutorialArrowFloat 2s ease-in-out infinite;
+}
+
+@keyframes tutorialSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tutorialArrowFloat {
+  0%, 100% {
+    transform: translateY(0px);
+    filter: drop-shadow(0 0 15px rgba(0, 212, 170, 0.8));
+  }
+  50% {
+    transform: translateY(-8px);
+    filter: drop-shadow(0 0 25px rgba(0, 212, 170, 1)) drop-shadow(0 0 35px rgba(20, 184, 166, 0.6));
+  }
+}
+
+/* Tutorial responsive design */
+@media (max-width: 768px) {
+  .tutorial-popup {
+    max-width: calc(100vw - 20px) !important;
+    left: 10px !important;
+    right: 10px !important;
+    transform: none !important;
+  }
+  
+  .tutorial-arrow {
+    display: none; /* Hide arrows on mobile for cleaner experience */
+  }
+}
+
 @keyframes particleFloat {
   0% { transform: translateY(0px) scale(1); opacity: 0; }
   10% { opacity: 0.6; }
@@ -259,6 +366,58 @@ body {
 }
 
 /* Container animations */
+.auth-container {
+  animation: authContainerSlide 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes authContainerSlide {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.intro-panel {
+  animation: introPanelSlide 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes introPanelSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-30px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Responsive design for auth page */
+@media (max-width: 1024px) {
+  .auth-container {
+    justify-content: center;
+  }
+  
+  .intro-panel {
+    display: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-container {
+    padding: 1rem;
+  }
+  
+  .main-container {
+    padding: 2rem !important;
+    max-width: 100% !important;
+  }
+}
+
 @keyframes containerGlow {
   from {
     opacity: 0;
