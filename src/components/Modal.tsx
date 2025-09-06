@@ -32,16 +32,57 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
     setDragOver(false);
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-      console.log('Files dropped:', files);
-      // Handle file upload logic here
+      handleFiles(files);
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      console.log('Files selected:', files);
-      // Handle file upload logic here
+      handleFiles(files);
+    }
+  };
+
+  const handleFiles = (files: FileList) => {
+    const maxSize = 200 * 1024 * 1024; // 200MB in bytes
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg', 
+      'image/png',
+      'image/webp',
+      'image/bmp',
+      'image/tiff'
+    ];
+
+    const validFiles: File[] = [];
+    const errors: string[] = [];
+
+    Array.from(files).forEach(file => {
+      // Check file size
+      if (file.size > maxSize) {
+        errors.push(`${file.name} exceeds 200MB limit`);
+        return;
+      }
+
+      // Check file type
+      if (!allowedTypes.includes(file.type)) {
+        errors.push(`${file.name} is not a supported file type`);
+        return;
+      }
+
+      validFiles.push(file);
+    });
+
+    if (errors.length > 0) {
+      alert('Upload errors:\n' + errors.join('\n'));
+    }
+
+    if (validFiles.length > 0) {
+      console.log('Valid files for upload:', validFiles);
+      // Process valid files here
+      // You can add your upload logic here
+      alert(`Successfully selected ${validFiles.length} file(s) for upload`);
     }
   };
 
@@ -77,7 +118,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".pdf,.jpg,.jpeg,.png,.dcm,.txt,.doc,.docx"
+                accept=".pdf,.jpg,.jpeg,.png,.webp,.bmp,.tiff"
                 onChange={handleFileSelect}
                 className="hidden"
               />
@@ -86,10 +127,10 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
                 Drop files here or click to browse
               </h3>
               <p className="text-[var(--text-secondary)] text-sm">
-                Supported formats: PDF, JPEG, PNG, DICOM, TXT, DOC, DOCX
+                Supported formats: PDF, JPEG, PNG, WebP, BMP, TIFF
               </p>
               <p className="text-[var(--text-muted)] text-xs mt-2">
-                Maximum file size: 50MB per file
+                Maximum file size: 200MB per file
               </p>
             </div>
             <div className="text-center">
