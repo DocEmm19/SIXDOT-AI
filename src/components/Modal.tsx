@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, Search, MessageSquare, Link, FileText } from 'lucide-react';
+import { insertUserActivity } from '../lib/supabase';
 
 interface ModalProps {
   isOpen: boolean;
@@ -7,9 +8,10 @@ interface ModalProps {
   title: string;
   type: 'upload' | 'medicine-search' | 'question';
   onSubmit?: (data: string) => void;
+  userEmail?: string;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit, userEmail }) => {
   const [dragOver, setDragOver] = useState(false);
   const [medicineQuery, setMedicineQuery] = useState('');
   const [question, setQuestion] = useState('');
@@ -19,6 +21,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedText, setExtractedText] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
@@ -124,7 +127,50 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
     }
   };
 
-  const handleProcessFile = () => {
+  const handleProcessFile = async () => {
+    if (!extractedText || !userEmail) {
+      console.error('Missing extracted text or user email');
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      // Save extracted text to Supabase
+      const result = await insertUserActivity({
+        user_email: userEmail,
+        extracted_text: extractedText,
+        analysis_result: '', // Will be populated later with AI analysis
+        file_name: uploadedFile?.name,
+        file_type: uploadedFile?.type,
+      });
+
+      if (result) {
+        console.log('Successfully saved extracted text to database:', result.id);
+        
+        // Show success message
+        const successMessage = `File processed successfully! Extracted ${extractedText.length} characters from ${uploadedFile?.name}. Data saved to your activity history.`;
+        
+        if (onSubmit) {
+          onSubmit(successMessage);
+        }
+        
+        // Reset state and close modal
+        setExtractedText('');
+        setUploadedFile(null);
+        onClose();
+      } else {
+        throw new Error('Failed to save to database');
+      }
+    } catch (error) {
+      console.error('Error saving extracted text:', error);
+      setUploadError('Failed to save extracted text. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleProcessFileOriginal = () => {
     if (extractedText && onSubmit) {
       onSubmit(extractedText);
       // Reset state
@@ -290,14 +336,25 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
                   <div className="flex gap-3">
                     <button
                       onClick={handleProcessFile}
-                      className="feature-button flex-1 p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)]"
+                      disabled={isSaving}
+                      className="feature-button flex-1 p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                      <FileText className="w-4 h-4 mr-2 inline" />
-                      Analyze Extracted Text
+                      {isSaving ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="w-4 h-4" />
+                          Analyze Extracted Text
+                        </>
+                      )}
                     </button>
                     <button
                       onClick={resetUploadState}
-                      className="p-[12px_24px] bg-[rgba(255,255,255,0.1)] border border-[var(--glass-border)] rounded-[10px] text-[var(--text-secondary)] cursor-pointer transition-all duration-200 hover:bg-[rgba(255,255,255,0.15)] hover:text-[var(--text-primary)]"
+                      disabled={isSaving}
+                      className="p-[12px_24px] bg-[rgba(255,255,255,0.1)] border border-[var(--glass-border)] rounded-[10px] text-[var(--text-secondary)] cursor-pointer transition-all duration-200 hover:bg-[rgba(255,255,255,0.15)] hover:text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Upload Different File
                     </button>

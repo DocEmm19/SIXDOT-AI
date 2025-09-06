@@ -224,6 +224,7 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout, onNavigateToChatbot
         title={modalTitle}
         type={modalType}
         onSubmit={handleAddAnswer}
+        userEmail={user.email}
       />
 
       {/* Interactive Tutorial */}
