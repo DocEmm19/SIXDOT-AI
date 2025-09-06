@@ -224,9 +224,9 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
         <ThemeToggle />
       </div>
       
-      <div className="auth-container flex gap-8 w-full max-w-[1000px] items-center">
+      <div className="auth-container flex gap-8 w-full max-w-[1000px] items-stretch">
         {/* Information Panel */}
-        <div className="info-panel bg-[var(--glass-bg)] backdrop-blur-[30px] border border-[var(--glass-border)] rounded-3xl p-8 flex-1 max-w-[480px] shadow-[0_25px_50px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] animate-[containerGlow_0.8s_ease-out]">
+        <div className="info-panel bg-[var(--glass-bg)] backdrop-blur-[30px] border border-[var(--glass-border)] rounded-3xl p-8 flex-1 max-w-[480px] shadow-[0_25px_50px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] animate-[containerGlow_0.8s_ease-out] flex flex-col justify-between">
           <div className="info-content">
             <div className="info-header mb-6">
               <h2 className="info-title font-['Orbitron'] text-2xl font-semibold text-[var(--text-primary)] mb-3">
@@ -272,7 +272,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
         </div>
         
         {/* Auth Form Container */}
-        <div className="main-container bg-[var(--glass-bg)] backdrop-blur-[30px] border border-[var(--glass-border)] rounded-3xl p-10 w-full max-w-[450px] shadow-[0_25px_50px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] animate-[containerGlow_0.8s_ease-out]">
+        <div className="main-container bg-[var(--glass-bg)] backdrop-blur-[30px] border border-[var(--glass-border)] rounded-3xl p-10 w-full max-w-[450px] shadow-[0_25px_50px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] animate-[containerGlow_0.8s_ease-out] flex flex-col justify-between">
+        <div className="auth-form-content">
         <div className="logo-section text-center mb-10">
           <div className="mx-auto mb-6">
             <MedicalLogo size={120} />
@@ -467,6 +468,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
             )}
           </div>
         </form>
+      </div>
       </div>
       </div>
     </div>
