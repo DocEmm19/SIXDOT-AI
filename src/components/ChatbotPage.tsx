@@ -448,7 +448,13 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      // Add prescription analysis prefix to the extracted text
+      const prefixedText = `Please analyze this prescription: ${initialExtractedText}`;
+      setExtractedText(prefixedText);
+      // Auto-send after a short delay to ensure UI is ready
+      setTimeout(() => {
+        handleSendMessage();
+      }, 500);
     }
   };
 

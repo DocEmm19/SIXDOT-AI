@@ -188,9 +188,16 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit, u
     // Basic URL validation
     try {
       new URL(urlInput.trim());
-      console.log('URL submitted:', urlInput.trim());
-      // Handle URL processing logic here
+      
+      // Create prefixed URL text for analysis
+      const prefixedUrlText = `Please analyze the prescription at this URL: ${urlInput.trim()}`;
+      
+      if (onSubmit) {
+        onSubmit(prefixedUrlText);
+      }
+      
       setUploadError('');
+      setUrlInput('');
       onClose();
     } catch (error) {
       setUploadError('Please enter a valid URL');
