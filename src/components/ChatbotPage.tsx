@@ -89,49 +89,35 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
   };
 
   const simulateLLMResponse = async (userMessage: string): Promise<string> => {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
+    try {
+      // Replace with your actual n8n webhook URL
+      const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL || 'https://your-n8n-instance.com/webhook/your-webhook-id';
+      
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          context: initialContext,
+          user: user.email,
+          timestamp: new Date().toISOString()
+        })
+      });
 
-    // Context-specific responses
-    if (initialContext === 'upload') {
-      return `Based on your prescription query about "${userMessage}", I can help you understand the medications prescribed, their dosages, potential side effects, and usage instructions. For a complete analysis, please upload your prescription document or share the specific medications you'd like to know about.
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-**Key Points:**
-• Always follow your doctor's prescribed dosage
-• Be aware of potential drug interactions
-• Monitor for any unusual side effects
-• Take medications as directed (with/without food, timing, etc.)
-
-Would you like me to analyze specific medications or do you have questions about any particular aspect of your prescription?`;
-    } else if (initialContext === 'medicine-search') {
-      return `Here's what I found about "${userMessage}":
-
-**Medicine Information:**
-• **Generic Name:** [Based on your search]
-• **Usage:** Treatment of various conditions as prescribed
-• **Dosage:** Follow your doctor's prescription
-• **Side Effects:** May include common and rare side effects
-• **Interactions:** Can interact with certain medications
-• **Precautions:** Important safety information
-
-**Important:** This information is for educational purposes. Always consult your healthcare provider for personalized medical advice.
-
-Would you like more specific details about dosage, side effects, or interactions?`;
-    } else {
-      return `Thank you for your question about "${userMessage}". Based on current medical knowledge:
-
-**Response:**
-This is a comprehensive answer addressing your health question. I provide information based on trusted medical sources and current healthcare guidelines.
-
-**Key Recommendations:**
-• Consult with your healthcare provider for personalized advice
-• Follow prescribed treatments and medications
-• Monitor your symptoms and report changes
-• Maintain regular check-ups
-
-**Disclaimer:** This information is for educational purposes only and should not replace professional medical advice.
-
-Do you have any follow-up questions or need clarification on any specific aspect?`;
+      const data = await response.json();
+      
+      // Return the response from n8n workflow
+      return data.response || data.message || 'No response received from the workflow.';
+      
+    } catch (error) {
+      console.error('Error calling n8n webhook:', error);
+      throw new Error('Failed to get response from the AI service. Please check your connection and try again.');
     }
   };
 
