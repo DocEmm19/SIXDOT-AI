@@ -128,8 +128,23 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit, u
   };
 
   const handleProcessFile = async () => {
-    if (!extractedText || !userEmail) {
-      console.error('Missing extracted text or user email');
+    if (!extractedText) {
+      console.error('Missing extracted text');
+      return;
+    }
+
+    // If Supabase is not configured, show a different message
+    if (!userEmail) {
+      const successMessage = `File processed successfully! Extracted ${extractedText.length} characters from ${uploadedFile?.name}. Note: Database storage is not available - please configure Supabase to save data permanently.`;
+      
+      if (onSubmit) {
+        onSubmit(successMessage);
+      }
+      
+      // Reset state and close modal
+      setExtractedText('');
+      setUploadedFile(null);
+      onClose();
       return;
     }
 
@@ -160,7 +175,17 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit, u
         setUploadedFile(null);
         onClose();
       } else {
-        throw new Error('Failed to save to database');
+        // Handle case when Supabase is not configured
+        const warningMessage = `File processed successfully! Extracted ${extractedText.length} characters from ${uploadedFile?.name}. Note: Database storage is not available - please configure Supabase to save data permanently.`;
+        
+        if (onSubmit) {
+          onSubmit(warningMessage);
+        }
+        
+        // Reset state and close modal
+        setExtractedText('');
+        setUploadedFile(null);
+        onClose();
       }
     } catch (error) {
       console.error('Error saving extracted text:', error);
