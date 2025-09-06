@@ -198,14 +198,111 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
               <MessageSquare className="w-7 h-7 text-white" />
             </div>
             <h3 className="feature-title font-['Orbitron'] text-xl font-semibold text-[var(--text-primary)] mb-3">
-              AI Consultation
+              Ask Questions
             </h3>
             <p className="feature-description text-[var(--text-secondary)] leading-[1.6] mb-5">
-              Get instant AI-powered medical insights and recommendations for complex cases
+              Get instant answers about medications and health
             </p>
+            <div className="question-examples text-left mb-5">
+              <p className="text-[var(--text-secondary)] text-sm mb-2">Try asking:</p>
+              <p className="text-[var(--text-muted)] text-sm italic">"What are the side effects of ibuprofen?"</p>
+            </div>
             <button className="feature-button p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)]">
-              Ask AI
+              Ask Question
             </button>
+          </div>
+        </div>
+
+        {/* Medicine Search Results */}
+        {medicineResults.length > 0 && (
+          <div className="medicine-results-section bg-[var(--glass-bg)] backdrop-blur-[20px] border border-[var(--glass-border)] rounded-[20px] p-8 mb-[50px]">
+            <div className="results-header text-center mb-8">
+              <h2 className="results-title font-['Orbitron'] text-[1.8rem] font-semibold text-[var(--text-primary)] mb-2">
+                Medicine Information
+              </h2>
+              <p className="results-subtitle text-[var(--text-secondary)]">
+                Detailed information from trusted medical databases
+              </p>
+            </div>
+
+            {medicineResults.map((medicine, index) => (
+              <div key={index} className="medicine-card bg-[rgba(255,255,255,0.05)] rounded-xl p-6 mb-4">
+                <div className="medicine-header mb-4">
+                  <h3 className="medicine-name font-['Orbitron'] text-xl font-semibold text-[var(--text-primary)] mb-1">
+                    {medicine.name}
+                  </h3>
+                  <p className="generic-name text-[var(--text-secondary)] text-sm">
+                    Generic: {medicine.genericName}
+                  </p>
+                </div>
+
+                <div className="medicine-details grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="description-section">
+                    <h4 className="section-title font-semibold text-[var(--text-primary)] mb-2">Description</h4>
+                    <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{medicine.description}</p>
+                  </div>
+
+                  <div className="uses-section">
+                    <h4 className="section-title font-semibold text-[var(--text-primary)] mb-2">Common Uses</h4>
+                    <ul className="text-[var(--text-secondary)] text-sm space-y-1">
+                      {medicine.uses.map((use, idx) => (
+                        <li key={idx} className="flex items-start">
+                          <span className="w-2 h-2 bg-[var(--primary-cyan)] rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                          {use}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="dosage-section">
+                    <h4 className="section-title font-semibold text-[var(--text-primary)] mb-2">Dosage</h4>
+                    <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{medicine.dosage}</p>
+                  </div>
+
+                  <div className="side-effects-section">
+                    <h4 className="section-title font-semibold text-[var(--text-primary)] mb-2">Side Effects</h4>
+                    <ul className="text-[var(--text-secondary)] text-sm space-y-1">
+                      {medicine.sideEffects.map((effect, idx) => (
+                        <li key={idx} className="flex items-start">
+                          <span className="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                          {effect}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="warnings-section mt-6 p-4 bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.3)] rounded-lg">
+                  <h4 className="section-title font-semibold text-red-400 mb-2">Important Warnings</h4>
+                  <ul className="text-red-300 text-sm space-y-1">
+                    {medicine.warnings.map((warning, idx) => (
+                      <li key={idx} className="flex items-start">
+                        <span className="w-2 h-2 bg-red-400 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                        {warning}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="source-section mt-4 text-center">
+                  <p className="text-[var(--primary-cyan)] text-xs">
+                    Source: {medicine.source}
+                  </p>
+                  <p className="text-[var(--text-muted)] text-xs mt-1">
+                    This information is for educational purposes only. Always consult with a healthcare provider.
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Answers Section */}
+        <div className="answers-section bg-[var(--glass-bg)] backdrop-blur-[20px] border border-[var(--glass-border)] rounded-[20px] p-8">
+          <div className="answers-header text-center mb-8">
+            <h2 className="answers-title font-['Orbitron'] text-[1.8rem] font-semibold text-[var(--text-primary)] mb-2">
+              Recent Questions & Answers
+            </p>
           </div>
         </div>
 
@@ -213,54 +310,7 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
         <div className="answers-section bg-[var(--glass-bg)] backdrop-blur-[20px] border border-[var(--glass-border)] rounded-[20px] p-8">
           <div className="answers-header text-center mb-8">
             <h2 className="answers-title font-['Orbitron'] text-[1.8rem] font-semibold text-[var(--text-primary)] mb-2">
-              Recent AI Consultations
-            </h2>
             <p className="answers-subtitle text-[var(--text-secondary)]">
-              Your latest medical AI interactions and insights
+              Your latest health and medication questions
             </p>
           </div>
-
-          <div className="answers-content max-h-[400px] overflow-y-auto py-5">
-            {answers.length === 0 ? (
-              <div className="no-answers text-center text-[var(--text-muted)] italic p-10">
-                No consultations yet. Start by asking the AI a medical question or uploading files for analysis.
-              </div>
-            ) : (
-              answers.map((answer) => (
-                <div key={answer.id} className="answer-item bg-[rgba(255,255,255,0.05)] rounded-xl p-5 mb-4 border-l-4 border-[var(--primary-cyan)]">
-                  <div className="answer-question font-semibold text-[var(--text-primary)] mb-2">
-                    Q: {answer.question}
-                  </div>
-                  <div className="answer-response text-[var(--text-secondary)] leading-[1.6]">
-                    A: {answer.response}
-                  </div>
-                  <div className="answer-time text-xs text-[var(--text-muted)] mt-2">
-                    {answer.timestamp.toLocaleString()}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Modals */}
-      <Modal
-        isOpen={activeModal === 'upload'}
-        onClose={() => setActiveModal(null)}
-        title="Upload Medical Files"
-        type="upload"
-      />
-
-      <Modal
-        isOpen={activeModal === 'question'}
-        onClose={() => setActiveModal(null)}
-        title="AI Medical Consultation"
-        type="question"
-        onSubmit={handleAskQuestion}
-      />
-    </div>
-  );
-};
-
-export default HomePage;
