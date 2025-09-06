@@ -100,8 +100,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
       
       console.log('🚀 Sending request to webhook:', webhookUrl);
       console.log('📤 Request payload:', {
-        message: userMessage,
-        context: initialContext,
+        ...getContextSpecificPayload(userMessage),
         userEmail: user.email,
         userName: user.name,
         timestamp: new Date().toISOString(),
@@ -116,8 +115,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
           'User-Agent': 'MediLens-Chatbot/1.0',
         },
         body: JSON.stringify({
-          message: userMessage,
-          context: initialContext,
+          ...getContextSpecificPayload(userMessage),
           userEmail: user.email,
           userName: user.name,
           timestamp: new Date().toISOString(),
@@ -160,6 +158,45 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
       
       throw new Error(`AI service error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`);
     }
+  };
+
+  const getContextSpecificPayload = (userMessage: string) => {
+    switch (initialContext) {
+      case 'upload':
+        return {
+          document_content: userMessage,
+          context: 'upload'
+        };
+      case 'medicine-search':
+        // Extract only medicine name from the message
+        const medicineName = extractMedicineName(userMessage);
+        return {
+          medicine_query: medicineName,
+          context: 'medicine-search'
+        };
+      case 'question':
+        return {
+          question_text: userMessage,
+          context: 'question'
+        };
+      default:
+        return {
+          message: userMessage,
+          context: initialContext
+        };
+    }
+  };
+
+  const extractMedicineName = (text: string): string => {
+    // Remove common prefixes and extract medicine name
+    const cleanText = text
+      .replace(/^(what is|tell me about|information about|search for|find|medicine|drug)\s*/i, '')
+      .replace(/\s*(medicine|drug|medication|tablet|capsule|syrup)$/i, '')
+      .trim();
+    
+    // Take first word/phrase as medicine name
+    const words = cleanText.split(/\s+/);
+    return words.slice(0, 2).join(' ').trim() || cleanText;
   };
 
   const formatJsonResponse = (data: any): string => {
