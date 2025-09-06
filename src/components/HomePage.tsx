@@ -303,18 +303,6 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
             <h2 className="answers-title font-['Orbitron'] text-[1.8rem] font-semibold text-[var(--text-primary)] mb-2">
               Recent Questions & Answers
             </h2>
-            <button className="feature-button p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)]">
-              Ask AI
-            </button>
-          </div>
-        </div>
-
-        {/* Answers Section */}
-        <div className="answers-section bg-[var(--glass-bg)] backdrop-blur-[20px] border border-[var(--glass-border)] rounded-[20px] p-8">
-          <div className="answers-header text-center mb-8">
-            <h2 className="answers-title font-['Orbitron'] text-[1.8rem] font-semibold text-[var(--text-primary)] mb-2">
-              Recent Questions & Answers
-            </h2>
             <p className="answers-subtitle text-[var(--text-secondary)]">
               Your latest health and medication questions
             </p>
