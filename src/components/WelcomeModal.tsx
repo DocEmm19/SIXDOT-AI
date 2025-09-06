@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, CheckCircle, Brain, Upload, Calendar, User } from 'lucide-react';
+import { X, CheckCircle, Brain, Upload } from 'lucide-react';
 import MedicalLogo from './MedicalLogo';
 
 interface WelcomeModalProps {
@@ -61,23 +61,6 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ isOpen, onClose, onSkip, us
                 </span>
               </div>
 
-              <div className="feature-item flex items-center gap-4 p-3 bg-[rgba(255,255,255,0.05)] rounded-xl border border-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.08)] transition-all duration-200">
-                <div className="feature-icon w-10 h-10 bg-gradient-to-r from-[var(--primary-purple)] to-[var(--primary-cyan)] rounded-lg flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-white" />
-                </div>
-                <span className="feature-text text-[var(--text-secondary)] font-medium">
-                  Book doctor consultations online
-                </span>
-              </div>
-
-              <div className="feature-item flex items-center gap-4 p-3 bg-[rgba(255,255,255,0.05)] rounded-xl border border-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.08)] transition-all duration-200">
-                <div className="feature-icon w-10 h-10 bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] rounded-lg flex items-center justify-center">
-                  <User className="w-5 h-5 text-white" />
-                </div>
-                <span className="feature-text text-[var(--text-secondary)] font-medium">
-                  Manage your personal health profile
-                </span>
-              </div>
             </div>
           </div>
 
