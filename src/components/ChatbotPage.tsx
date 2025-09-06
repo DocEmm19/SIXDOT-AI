@@ -51,6 +51,11 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
 
   // Initialize chat session and load messages
   useEffect(() => {
+    if (!user.id) {
+      console.error('User ID is missing, cannot initialize chat');
+      return;
+    }
+
     const initializeChat = async () => {
       // Load user's chat sessions
       await loadChatSessions();
@@ -76,14 +81,23 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
     };
 
     initializeChat();
-  }, [initialContext]);
+  }, [initialContext, user.id, sessionId]);
 
   const loadChatSessions = async () => {
+    if (!user.id) {
+      console.error('User ID is missing, cannot load chat sessions');
+      return;
+    }
     const sessions = await getChatSessions(user.id);
     setChatSessions(sessions);
   };
 
   const createNewChatSession = async () => {
+    if (!user.id) {
+      console.error('User ID is missing, cannot create chat session');
+      return;
+    }
+
     const session = await createChatSession({
       user_id: user.id,
       context: initialContext,
