@@ -90,34 +90,62 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
 
   const simulateLLMResponse = async (userMessage: string): Promise<string> => {
     try {
-      // Replace with your actual n8n webhook URL
-      const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL || 'https://your-n8n-instance.com/webhook/your-webhook-id';
+      const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL;
+      
+      if (!webhookUrl) {
+        throw new Error('N8N webhook URL not configured. Please set VITE_N8N_WEBHOOK_URL in your .env file.');
+      }
+      
+      console.log('Sending request to webhook:', webhookUrl);
       
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
           message: userMessage,
           context: initialContext,
-          user: user.email,
-          timestamp: new Date().toISOString()
+          userEmail: user.email,
+          userName: user.name,
+          timestamp: new Date().toISOString(),
+          source: 'medilens-chatbot'
         })
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
 
-      const data = await response.json();
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse JSON response:', parseError);
+        // If response is not JSON, treat it as plain text
+        return responseText || 'Received response from workflow but could not parse it.';
+      }
       
       // Return the response from n8n workflow
-      return data.response || data.message || 'No response received from the workflow.';
+      return data.response || data.message || data.output || responseText || 'No response received from the workflow.';
       
     } catch (error) {
       console.error('Error calling n8n webhook:', error);
-      throw new Error('Failed to get response from the AI service. Please check your connection and try again.');
+      
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Network error: Unable to connect to the AI service. Please check your internet connection and webhook URL.');
+      }
+      
+      throw new Error(`AI service error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`);
     }
   };
 
