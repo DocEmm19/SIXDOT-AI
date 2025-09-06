@@ -3,11 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create Supabase client only if environment variables are available
+export const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
 // Database types
 export interface UserActivity {
@@ -29,6 +28,11 @@ export const insertUserActivity = async (data: {
   file_name?: string;
   file_type?: string;
 }): Promise<UserActivity | null> => {
+  if (!supabase) {
+    console.warn('Supabase not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+    return null;
+  }
+
   try {
     const { data: result, error } = await supabase
       .from('UserActivity')
@@ -55,6 +59,11 @@ export const insertUserActivity = async (data: {
 };
 
 export const getUserActivities = async (userEmail: string): Promise<UserActivity[]> => {
+  if (!supabase) {
+    console.warn('Supabase not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+    return [];
+  }
+
   try {
     const { data, error } = await supabase
       .from('UserActivity')
@@ -78,6 +87,11 @@ export const updateUserActivityAnalysis = async (
   id: string, 
   analysisResult: string
 ): Promise<boolean> => {
+  if (!supabase) {
+    console.warn('Supabase not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+    return false;
+  }
+
   try {
     const { error } = await supabase
       .from('UserActivity')
