@@ -266,8 +266,12 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
             </div>
             
             <div className="disclaimer bg-[rgba(255,255,255,0.05)] border border-[var(--glass-border)] rounded-xl p-4">
-              <p className="disclaimer-text text-[var(--text-muted)] text-xs leading-relaxed text-center">
-                This information is for educational purposes only. Always consult with healthcare providers for medical advice.
+              <h4 className="disclaimer-title text-[var(--text-primary)] font-semibold text-sm mb-2">Medical Disclaimer</h4>
+              <p className="disclaimer-text text-[var(--text-muted)] text-xs leading-relaxed mb-2">
+                MediLens is designed to assist healthcare professionals and patients with medical information management. This platform is not intended to replace professional medical advice, diagnosis, or treatment.
+              </p>
+              <p className="disclaimer-text text-[var(--text-muted)] text-xs leading-relaxed">
+                Always seek the advice of qualified healthcare providers with any questions regarding medical conditions or treatments.
               </p>
             </div>
           </div>
