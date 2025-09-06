@@ -229,11 +229,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
         <div className="info-panel bg-[var(--glass-bg)] backdrop-blur-[30px] border border-[var(--glass-border)] rounded-3xl p-8 flex-1 max-w-[480px] shadow-[0_25px_50px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] animate-[containerGlow_0.8s_ease-out] flex flex-col justify-between">
           <div className="info-content">
             <div className="info-header mb-6">
-              <h2 className="info-title font-['Orbitron'] text-xl font-semibold text-[var(--text-primary)] mb-2">
-                Your Personal Medicine
-              </h2>
               <h2 className="info-title font-['Orbitron'] text-xl font-semibold text-[var(--text-primary)] mb-3">
-                Information Assistant
+                Intelligent Healthcare Information Hub
               </h2>
               <div className="info-divider w-16 h-1 bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] rounded-full mb-4"></div>
             </div>
