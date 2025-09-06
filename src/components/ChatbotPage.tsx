@@ -130,7 +130,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'User-Agent': 'MediLens-Chatbot/1.0',
+            'User-Agent': 'MediLens-Chatbot/1.0'
           },
           body: JSON.stringify(payload),
           signal: controller.signal
@@ -147,7 +147,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
           
           if (fetchError.message.includes('fetch')) {
             console.error('🌐 Network error - cannot reach webhook URL:', webhookUrl);
-            throw new Error(`Network error: Cannot reach webhook URL. Please verify:\n1. The URL is correct: ${webhookUrl}\n2. Your n8n instance is running and accessible\n3. The webhook endpoint exists`);
+            throw new Error(`Network error: Cannot reach webhook URL. Please verify:\n1. The URL is correct: ${webhookUrl}\n   - Try changing '/webhook-test/' to '/webhook/' if applicable\n   - Ensure the webhook ID is correct\n2. Your n8n instance is running and accessible\n3. The webhook endpoint exists and is enabled\n4. CORS is configured in n8n to allow requests from localhost:5173`);
           }
         }
         
@@ -163,11 +163,11 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
         
         // Provide specific error messages based on status code
         if (response.status === 404) {
-          throw new Error(`Webhook not found (404): The webhook URL may be incorrect or the endpoint doesn't exist. Please check your n8n webhook configuration.`);
+          throw new Error(`Webhook not found (404): The webhook URL may be incorrect or the endpoint doesn't exist.\nTry:\n1. Check if URL should use '/webhook/' instead of '/webhook-test/'\n2. Verify the webhook ID in your n8n workflow\n3. Ensure the webhook is activated in n8n`);
         } else if (response.status === 500) {
-          throw new Error(`Workflow error (500): There's an error in your n8n workflow. Please check your n8n execution logs for details.`);
+          throw new Error(`Workflow error (500): There's an error in your n8n workflow.\nSteps to fix:\n1. Go to your n8n instance\n2. Check the 'Executions' tab\n3. Look for failed executions\n4. Review the error details in the execution log\n5. Common issues: missing nodes, incorrect data mapping, or authentication problems`);
         } else if (response.status === 403) {
-          throw new Error(`Access forbidden (403): Check your n8n webhook authentication settings.`);
+          throw new Error(`Access forbidden (403): Check your n8n webhook authentication settings.\nEnsure:\n1. Webhook authentication is disabled for testing\n2. CORS is properly configured\n3. No IP restrictions are blocking localhost`);
         } else {
           throw new Error(`HTTP error ${response.status}: ${errorText}`);
         }
