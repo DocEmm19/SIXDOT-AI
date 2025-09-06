@@ -7,6 +7,7 @@ import Modal from './Modal';
 interface HomePageProps {
   user: User;
   onLogout: () => void;
+  onFeatureClick: (feature: 'upload' | 'search' | 'question') => void;
 }
 
 interface Answer {
@@ -27,16 +28,11 @@ interface MedicineInfo {
   source: string;
 }
 
-const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
+const HomePage: React.FC<HomePageProps> = ({ user, onLogout, onFeatureClick }) => {
   const [answers, setAnswers] = useState<Answer[]>([]);
-  const [activeModal, setActiveModal] = useState<string | null>(null);
   const [medicineQuery, setMedicineQuery] = useState('');
   const [medicineResults, setMedicineResults] = useState<MedicineInfo[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-
-  const handleFeatureClick = (feature: string) => {
-    setActiveModal(feature);
-  };
 
   const handleMedicineSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,7 +130,7 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
         <div className="features-grid grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-8 mb-[50px]">
           <div
             className="feature-card bg-[var(--glass-bg)] backdrop-blur-[20px] border border-[var(--glass-border)] rounded-[20px] p-8 text-center transition-all duration-300 cubic-bezier-[0.4,0,0.2,1] cursor-pointer relative overflow-hidden hover:transform hover:-translate-y-2 hover:border-[var(--primary-cyan)] hover:shadow-[0_25px_50px_rgba(0,212,170,0.2)] before:content-[''] before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-[rgba(0,212,170,0.1)] before:to-transparent before:transition-[left_0.6s_ease] hover:before:left-full"
-            onClick={() => handleFeatureClick('upload')}
+            onClick={() => onFeatureClick('upload')}
           >
             <div className="feature-icon w-[60px] h-[60px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] rounded-2xl flex items-center justify-center mx-auto mb-5 text-[28px]">
               <Upload className="w-7 h-7 text-white" />
@@ -227,6 +223,14 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
               <button
                 type="submit"
                 className="feature-button w-full p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)]"
+                onClick={(e) => {
+                  const formData = new FormData(e.currentTarget.form!);
+                  const question = formData.get('question') as string;
+                  if (question?.trim()) {
+                    e.preventDefault();
+                    onFeatureClick('question');
+                  }
+                }}
               >
                 Ask Question
               </button>
