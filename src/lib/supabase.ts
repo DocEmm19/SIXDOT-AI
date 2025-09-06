@@ -111,7 +111,7 @@ export const insertUserActivity = async (data: {
 
   try {
     const { data: result, error } = await supabase
-      .from('UserActivity')
+      .from('useractivity')
       .insert([{
         user_email: data.user_email,
         extracted_text: data.extracted_text,
@@ -323,7 +323,7 @@ export const getUserActivities = async (userEmail: string): Promise<UserActivity
 
   try {
     const { data, error } = await supabase
-      .from('UserActivity')
+      .from('useractivity')
       .select('*')
       .eq('user_email', userEmail)
       .order('created_at', { ascending: false });
@@ -351,7 +351,7 @@ export const updateUserActivityAnalysis = async (
 
   try {
     const { error } = await supabase
-      .from('UserActivity')
+      .from('useractivity')
       .update({ analysis_result: analysisResult })
       .eq('id', id);
 

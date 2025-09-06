@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, Search, MessageSquare, Link, FileText } from 'lucide-react';
-import { insertUserActivity } from '../lib/supabase';
+import { createWorker } from 'tesseract.js';
 
 interface ModalProps {
   isOpen: boolean;
@@ -84,11 +84,30 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit, u
           resolve(`[PDF Content Extracted from: ${file.name}]\n\nThis is simulated text extraction from a PDF file. In a real implementation, this would contain the actual text content extracted from the PDF using libraries like PDF.js or pdf-parse.\n\nThe extracted content would include all readable text from the document, maintaining structure and formatting where possible.`);
         }, 2000);
       } else if (file.type.startsWith('image/')) {
-        // For images, we'll simulate OCR text extraction
-        // In a real application, you'd use OCR services like Tesseract.js or cloud OCR APIs
-        setTimeout(() => {
-          resolve(`[OCR Text Extracted from: ${file.name}]\n\nThis is simulated text extraction from an image file using OCR (Optical Character Recognition). In a real implementation, this would contain the actual text recognized from the image using services like:\n\n- Tesseract.js for client-side OCR\n- Google Cloud Vision API\n- AWS Textract\n- Azure Computer Vision\n\nThe extracted text would include any readable text found in the image, such as prescription details, medicine names, dosages, and instructions.`);
-        }, 3000);
+        // Real OCR implementation using Tesseract.js
+        const performOCR = async () => {
+          try {
+            const worker = await createWorker('eng');
+            const { data: { text } } = await worker.recognize(file);
+            await worker.terminate();
+            
+            if (!text || text.trim().length === 0) {
+              throw new Error('No text could be extracted from the image. Please ensure the image is clear and contains readable text.');
+            }
+            
+            // Clean up common OCR artifacts
+            const cleanedText = text
+              .replace(/\n\s*\n/g, '\n') // Remove multiple empty lines
+              .replace(/[^\w\s\-.,;:()\[\]]/g, '') // Remove unusual characters
+              .trim();
+            
+            resolve(cleanedText);
+          } catch (error) {
+            reject(new Error(`OCR processing failed: ${(error as Error).message}`));
+          }
+        };
+        
+        performOCR();
       } else {
         reject(new Error('Unsupported file type for text extraction'));
       }
@@ -136,21 +155,6 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit, u
     setIsSaving(true);
 
     try {
-      // Save extracted text to Supabase if configured
-      if (userEmail) {
-        const result = await insertUserActivity({
-          user_email: userEmail,
-          extracted_text: extractedText,
-          analysis_result: '', // Will be populated later with AI analysis
-          file_name: uploadedFile?.name,
-          file_type: uploadedFile?.type,
-        });
-
-        if (result) {
-          console.log('Successfully saved extracted text to database:', result.id);
-        }
-      }
-      
       // Pass extracted text to parent component for chatbot navigation
       if (onSubmit) {
         onSubmit(extractedText);
