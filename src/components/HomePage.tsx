@@ -190,7 +190,6 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
 
           <div
             className="feature-card bg-[var(--glass-bg)] backdrop-blur-[20px] border border-[var(--glass-border)] rounded-[20px] p-8 text-center transition-all duration-300 cubic-bezier-[0.4,0,0.2,1] cursor-pointer relative overflow-hidden hover:transform hover:-translate-y-2 hover:border-[var(--primary-cyan)] hover:shadow-[0_25px_50px_rgba(0,212,170,0.2)] before:content-[''] before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-[rgba(0,212,170,0.1)] before:to-transparent before:transition-[left_0.6s_ease] hover:before:left-full"
-            onClick={() => handleFeatureClick('question')}
           >
             <div className="feature-icon w-[60px] h-[60px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] rounded-2xl flex items-center justify-center mx-auto mb-5 text-[28px]">
               <MessageSquare className="w-7 h-7 text-white" />
@@ -201,13 +200,37 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
             <p className="feature-description text-[var(--text-secondary)] leading-[1.6] mb-5">
               Get instant answers about medications and health
             </p>
-            <div className="question-examples text-left mb-5">
-              <p className="text-[var(--text-secondary)] text-sm mb-2">Try asking:</p>
-              <p className="text-[var(--text-muted)] text-sm italic">"What are the side effects of ibuprofen?"</p>
-            </div>
-            <button className="feature-button p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)]">
-              Ask Question
-            </button>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const question = formData.get('question') as string;
+              if (question.trim()) {
+                handleAskQuestion(question.trim());
+                (e.target as HTMLFormElement).reset();
+              }
+            }} className="question-form">
+              <div className="question-input-container relative mb-4">
+                <input
+                  type="text"
+                  name="question"
+                  placeholder="Ask about medications, side effects, interactions..."
+                  className="question-input w-full p-4 bg-[rgba(255,255,255,0.08)] border border-[var(--glass-border)] rounded-xl text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--primary-cyan)] focus:shadow-[0_0_0_3px_rgba(0,212,170,0.15)] placeholder:text-[var(--text-muted)]"
+                  required
+                />
+              </div>
+              <div className="question-examples text-left mb-4">
+                <p className="text-[var(--text-secondary)] text-xs mb-1">Example questions:</p>
+                <p className="text-[var(--text-muted)] text-xs italic">"What are the side effects of ibuprofen?"</p>
+                <p className="text-[var(--text-muted)] text-xs italic">"Can I take aspirin with blood pressure medication?"</p>
+              </div>
+              <button
+                type="submit"
+                className="feature-button w-full p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)]"
+              >
+                Ask Question
+              </button>
+            </form>
           </div>
         </div>
 
@@ -296,16 +319,38 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
         )}
 
         {/* Answers Section */}
-        <div className="answers-section bg-[var(--glass-bg)] backdrop-blur-[20px] border border-[var(--glass-border)] rounded-[20px] p-8">
-          <div className="answers-header text-center mb-8">
-            <h2 className="answers-title font-['Orbitron'] text-[1.8rem] font-semibold text-[var(--text-primary)] mb-2">
-              Recent Questions & Answers
-            </h2>
-            <p className="answers-subtitle text-[var(--text-secondary)]">
-              Your latest health and medication questions
-            </p>
+        {answers.length > 0 && (
+          <div className="answers-section bg-[var(--glass-bg)] backdrop-blur-[20px] border border-[var(--glass-border)] rounded-[20px] p-8">
+            <div className="answers-header text-center mb-8">
+              <h2 className="answers-title font-['Orbitron'] text-[1.8rem] font-semibold text-[var(--text-primary)] mb-2">
+                Recent Questions & Answers
+              </h2>
+              <p className="answers-subtitle text-[var(--text-secondary)]">
+                Your latest health and medication questions
+              </p>
+            </div>
+
+            <div className="answers-list space-y-4">
+              {answers.map((answer) => (
+                <div key={answer.id} className="answer-item bg-[rgba(255,255,255,0.05)] rounded-xl p-6 border-l-4 border-[var(--primary-cyan)]">
+                  <div className="answer-header mb-3">
+                    <h4 className="question-text font-semibold text-[var(--text-primary)] mb-1">
+                      Q: {answer.question}
+                    </h4>
+                    <p className="answer-timestamp text-[var(--text-muted)] text-xs">
+                      {answer.timestamp.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="answer-content">
+                    <p className="answer-text text-[var(--text-secondary)] leading-relaxed">
+                      <strong>A:</strong> {answer.response}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
