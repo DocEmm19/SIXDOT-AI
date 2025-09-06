@@ -220,35 +220,75 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, type, onSubmit })
 
       case 'search':
         return (
-          <form onSubmit={handleSubmit}>
-            <div className="mb-5">
+          <>
+            <div
+              className={`file-upload-area border-2 border-dashed rounded-xl p-10 text-center mb-5 transition-all duration-300 cursor-pointer ${
+                dragOver
+                  ? 'border-[var(--primary-cyan)] bg-[rgba(0,212,170,0.1)]'
+                  : 'border-[var(--glass-border)] hover:border-[var(--primary-cyan)] hover:bg-[rgba(0,212,170,0.05)]'
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+            >
               <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search medical literature, drug interactions, symptoms..."
-                className="search-input w-full p-4 bg-[rgba(255,255,255,0.08)] border border-[var(--glass-border)] rounded-xl text-[var(--text-primary)] text-base mb-5 focus:outline-none focus:border-[var(--primary-cyan)] focus:shadow-[0_0_0_3px_rgba(0,212,170,0.15)]"
-                autoFocus
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".pdf,.jpg,.jpeg,.png,.webp,.bmp,.tiff"
+                onChange={handleFileSelect}
+                className="hidden"
               />
+              <Upload className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4" />
+              <h3 className="text-[var(--text-primary)] text-lg font-semibold mb-2">
+                Drop files here or click to browse
+              </h3>
+              <p className="text-[var(--text-secondary)] text-sm">
+                Supported formats: PDF, JPEG, PNG, WebP, BMP, TIFF
+              </p>
+              <p className="text-[var(--text-muted)] text-xs mt-2">
+                Maximum file size: 200MB per file
+              </p>
             </div>
-            <div className="flex gap-3">
+            <div className="text-center">
               <button
-                type="submit"
-                disabled={!searchQuery.trim()}
-                className="feature-button flex-1 p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Search className="w-4 h-4 mr-2 inline" />
-                Search Database
-              </button>
-              <button
-                type="button"
                 onClick={onClose}
-                className="p-[12px_24px] bg-[rgba(255,255,255,0.1)] border border-[var(--glass-border)] rounded-[10px] text-[var(--text-secondary)] cursor-pointer transition-all duration-200 hover:bg-[rgba(255,255,255,0.15)] hover:text-[var(--text-primary)]"
+                className="feature-button p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)]"
               >
-                Cancel
+                Start Analysis
               </button>
             </div>
-          </form>
+            <form onSubmit={handleSubmit}>
+              <div className="mb-5">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search medical literature, drug interactions, symptoms..."
+                  className="search-input w-full p-4 bg-[rgba(255,255,255,0.08)] border border-[var(--glass-border)] rounded-xl text-[var(--text-primary)] text-base mb-5 focus:outline-none focus:border-[var(--primary-cyan)] focus:shadow-[0_0_0_3px_rgba(0,212,170,0.15)]"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={!searchQuery.trim()}
+                  className="feature-button flex-1 p-[12px_24px] bg-gradient-to-r from-[var(--primary-cyan)] to-[var(--primary-purple)] text-white border-none rounded-[10px] font-semibold cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-[2px] hover:shadow-[0_8px_20px_rgba(0,212,170,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Search className="w-4 h-4 mr-2 inline" />
+                  Search Database
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="p-[12px_24px] bg-[rgba(255,255,255,0.1)] border border-[var(--glass-border)] rounded-[10px] text-[var(--text-secondary)] cursor-pointer transition-all duration-200 hover:bg-[rgba(255,255,255,0.15)] hover:text-[var(--text-primary)]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </>
         );
 
       case 'question':
