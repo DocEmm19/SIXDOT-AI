@@ -95,33 +95,64 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
       const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL;
       
       if (!webhookUrl) {
+        console.error('❌ N8N webhook URL not configured');
         throw new Error('N8N webhook URL not configured. Please set VITE_N8N_WEBHOOK_URL in your .env file.');
       }
       
+      // Validate webhook URL format
+      try {
+        new URL(webhookUrl);
+      } catch (urlError) {
+        console.error('❌ Invalid webhook URL format:', webhookUrl);
+        throw new Error('Invalid webhook URL format. Please check your VITE_N8N_WEBHOOK_URL in .env file.');
+      }
+      
       console.log('🚀 Sending request to webhook:', webhookUrl);
-      console.log('📤 Request payload:', {
+      
+      const payload = {
         ...getContextSpecificPayload(userMessage),
         userEmail: user.email,
         userName: user.name,
         timestamp: new Date().toISOString(),
         source: 'medilens-chatbot'
-      });
+      };
       
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'User-Agent': 'MediLens-Chatbot/1.0',
-        },
-        body: JSON.stringify({
-          ...getContextSpecificPayload(userMessage),
-          userEmail: user.email,
-          userName: user.name,
-          timestamp: new Date().toISOString(),
-          source: 'medilens-chatbot'
-        })
-      });
+      console.log('📤 Request payload:', payload);
+      
+      // Add timeout and better error handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      let response;
+      try {
+        response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'MediLens-Chatbot/1.0',
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        
+        if (fetchError instanceof Error) {
+          if (fetchError.name === 'AbortError') {
+            console.error('⏰ Request timeout - webhook took longer than 30 seconds');
+            throw new Error('Request timeout: The webhook is taking too long to respond. Please check your n8n workflow.');
+          }
+          
+          if (fetchError.message.includes('fetch')) {
+            console.error('🌐 Network error - cannot reach webhook URL:', webhookUrl);
+            throw new Error(`Network error: Cannot reach webhook URL. Please verify:\n1. The URL is correct: ${webhookUrl}\n2. Your n8n instance is running and accessible\n3. The webhook endpoint exists`);
+          }
+        }
+        
+        throw fetchError;
+      }
 
       console.log('📥 Response status:', response.status);
       console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
@@ -129,7 +160,17 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Error response:', errorText);
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+        
+        // Provide specific error messages based on status code
+        if (response.status === 404) {
+          throw new Error(`Webhook not found (404): The webhook URL may be incorrect or the endpoint doesn't exist. Please check your n8n webhook configuration.`);
+        } else if (response.status === 500) {
+          throw new Error(`Workflow error (500): There's an error in your n8n workflow. Please check your n8n execution logs for details.`);
+        } else if (response.status === 403) {
+          throw new Error(`Access forbidden (403): Check your n8n webhook authentication settings.`);
+        } else {
+          throw new Error(`HTTP error ${response.status}: ${errorText}`);
+        }
       }
 
       const responseText = await response.text();
@@ -151,12 +192,8 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
     } catch (error) {
       console.error('💥 Error calling n8n webhook:', error);
       
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        console.error('🌐 Network error detected - check webhook URL and connectivity');
-        throw new Error('Network error: Unable to connect to the n8n webhook. Please verify the webhook URL is correct and accessible.');
-      }
-      
-      throw new Error(`AI service error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`);
+      // Re-throw the error with the specific message we created above
+      throw error;
     }
   };
 
