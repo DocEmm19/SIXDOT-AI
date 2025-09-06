@@ -4,6 +4,7 @@ import AuthPage from './components/AuthPage';
 import HomePage from './components/HomePage';
 import ChatbotPage from './components/ChatbotPage';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { signOutUser, getCurrentUser } from './lib/supabase';
 
 export interface User {
   email: string;
@@ -17,12 +18,30 @@ function App() {
   const [chatbotContext, setChatbotContext] = useState<'upload' | 'medicine-search' | 'question'>('question');
   const [chatSessionId, setChatSessionId] = useState<string | undefined>(undefined);
 
+  // Check for existing Supabase session on app load
+  React.useEffect(() => {
+    const checkAuthSession = async () => {
+      const user = await getCurrentUser();
+      if (user) {
+        setCurrentUser({
+          email: user.email || '',
+          name: user.user_metadata?.name || 'User',
+          id: user.id
+        });
+        setCurrentPage('home');
+      }
+    };
+
+    checkAuthSession();
+  }, []);
+
   const handleLogin = (user: User) => {
     setCurrentUser(user);
     setCurrentPage('home');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOutUser();
     setCurrentUser(null);
     setCurrentPage('auth');
   };

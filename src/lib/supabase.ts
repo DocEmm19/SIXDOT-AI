@@ -8,6 +8,64 @@ export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
+// Auth helper functions
+export const getCurrentUser = async () => {
+  if (!supabase) return null;
+  
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error) {
+    console.error('Error getting current user:', error);
+    return null;
+  }
+  return user;
+};
+
+export const signUpUser = async (email: string, password: string, name: string) => {
+  if (!supabase) return null;
+  
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        name: name
+      }
+    }
+  });
+  
+  if (error) {
+    console.error('Error signing up:', error);
+    return null;
+  }
+  
+  return data;
+};
+
+export const signInUser = async (email: string, password: string) => {
+  if (!supabase) return null;
+  
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+  
+  if (error) {
+    console.error('Error signing in:', error);
+    return null;
+  }
+  
+  return data;
+};
+
+export const signOutUser = async () => {
+  if (!supabase) return;
+  
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    console.error('Error signing out:', error);
+  }
+};
+
 // Database types
 export interface UserActivity {
   id: string;
@@ -78,7 +136,6 @@ export const insertUserActivity = async (data: {
 
 // Chat session operations
 export const createChatSession = async (data: {
-  user_id: string;
   title?: string;
   context: string;
 }): Promise<ChatSession | null> => {
@@ -87,11 +144,18 @@ export const createChatSession = async (data: {
     return null;
   }
 
+  // Get current authenticated user
+  const user = await getCurrentUser();
+  if (!user) {
+    console.error('User not authenticated');
+    return null;
+  }
+
   try {
     const { data: result, error } = await supabase
       .from('chat_sessions')
       .insert([{
-        user_id: data.user_id,
+        user_id: user.id,
         title: data.title || 'New Chat',
         context: data.context,
       }])
@@ -110,9 +174,16 @@ export const createChatSession = async (data: {
   }
 };
 
-export const getChatSessions = async (userId: string): Promise<ChatSession[]> => {
+export const getChatSessions = async (): Promise<ChatSession[]> => {
   if (!supabase) {
     console.warn('Supabase not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+    return [];
+  }
+
+  // Get current authenticated user
+  const user = await getCurrentUser();
+  if (!user) {
+    console.error('User not authenticated');
     return [];
   }
 
@@ -120,7 +191,7 @@ export const getChatSessions = async (userId: string): Promise<ChatSession[]> =>
     const { data, error } = await supabase
       .from('chat_sessions')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', user.id)
       .order('updated_at', { ascending: false });
 
     if (error) {

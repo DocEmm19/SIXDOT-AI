@@ -9,6 +9,7 @@ import {
   getChatMessages, 
   updateChatSessionTitle,
   getChatSessions,
+  getCurrentUser,
   ChatSession,
   ChatMessage as DBChatMessage
 } from '../lib/supabase';
@@ -51,12 +52,14 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
 
   // Initialize chat session and load messages
   useEffect(() => {
-    if (!user.id) {
-      console.error('User ID is missing, cannot initialize chat');
-      return;
-    }
-
     const initializeChat = async () => {
+      // Verify user is authenticated with Supabase
+      const currentUser = await getCurrentUser();
+      if (!currentUser) {
+        console.error('User not authenticated with Supabase');
+        return;
+      }
+
       // Load user's chat sessions
       await loadChatSessions();
       
@@ -64,7 +67,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
         // Load existing session
         setCurrentSessionId(sessionId);
         await loadChatMessages(sessionId);
-        const sessions = await getChatSessions(user.email);
+        const sessions = await getChatSessions();
         const currentSession = sessions.find(s => s.id === sessionId);
         if (currentSession) {
           setCurrentSessionTitle(currentSession.title);
@@ -81,25 +84,15 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext,
     };
 
     initializeChat();
-  }, [initialContext, user.id, sessionId]);
+  }, [initialContext, sessionId]);
 
   const loadChatSessions = async () => {
-    if (!user.id) {
-      console.error('User ID is missing, cannot load chat sessions');
-      return;
-    }
-    const sessions = await getChatSessions(user.id);
+    const sessions = await getChatSessions();
     setChatSessions(sessions);
   };
 
   const createNewChatSession = async () => {
-    if (!user.id) {
-      console.error('User ID is missing, cannot create chat session');
-      return;
-    }
-
     const session = await createChatSession({
-      user_id: user.id,
       context: initialContext,
       title: getContextTitle()
     });

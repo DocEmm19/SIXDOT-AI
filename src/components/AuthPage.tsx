@@ -4,16 +4,10 @@ import { User } from '../App';
 import ThemeToggle from './ThemeToggle';
 import TermsModal from './TermsModal';
 import { Eye, EyeOff, Shield, Brain, Zap, FileText } from 'lucide-react';
+import { signUpUser, signInUser } from '../lib/supabase';
 
 interface AuthPageProps {
   onLogin: (user: User) => void;
-}
-
-interface StoredUser {
-  email: string;
-  name: string;
-  password: string;
-  id: string;
 }
 
 const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
@@ -34,7 +28,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Clear form data when switching tabs
   const handleTabChange = (tab: 'login' | 'signup' | 'reset') => {
     setActiveTab(tab);
     setFormData({
@@ -57,35 +50,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
       ...prev,
       [field]: value
     }));
-  };
-
-  // Get stored users from localStorage
-  const getStoredUsers = (): StoredUser[] => {
-    const users = localStorage.getItem('medilens-users');
-    return users ? JSON.parse(users) : [];
-  };
-
-  // Save user to localStorage
-  const saveUser = (user: StoredUser) => {
-    const users = getStoredUsers();
-    users.push(user);
-    localStorage.setItem('medilens-users', JSON.stringify(users));
-  };
-
-  // Find user by email
-  const findUser = (email: string): StoredUser | undefined => {
-    const users = getStoredUsers();
-    return users.find(user => user.email.toLowerCase() === email.toLowerCase());
-  };
-
-  // Update user password
-  const updateUserPassword = (email: string, newPassword: string) => {
-    const users = getStoredUsers();
-    const userIndex = users.findIndex(user => user.email.toLowerCase() === email.toLowerCase());
-    if (userIndex !== -1) {
-      users[userIndex].password = newPassword;
-      localStorage.setItem('medilens-users', JSON.stringify(users));
-    }
   };
 
   // Password validation
@@ -151,27 +115,26 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
           throw new Error('Passwords do not match');
         }
 
-        // Check if user already exists
-        const existingUser = findUser(trimmedEmail);
-        if (existingUser) {
-          throw new Error('An account with this email already exists');
+        // Sign up with Supabase
+        const result = await signUpUser(trimmedEmail, password, trimmedName);
+        if (!result) {
+          throw new Error('Failed to create account. Please try again.');
         }
 
-        // Create new user
-        const newUser: StoredUser = { 
-          email: trimmedEmail, 
-          name: trimmedName, 
-          password,
-          id: crypto.randomUUID()
-        };
-        saveUser(newUser);
+        if (result.user) {
+          setSuccessMessage('Account created successfully! You are now logged in.');
+          setShowSuccess(true);
 
-        setSuccessMessage('Account created successfully! You are now logged in.');
-        setShowSuccess(true);
-
-        setTimeout(() => {
-          onLogin({ email: trimmedEmail, name: trimmedName, id: newUser.id });
-        }, 1500);
+          setTimeout(() => {
+            onLogin({ 
+              email: trimmedEmail, 
+              name: trimmedName, 
+              id: result.user.id 
+            });
+          }, 1500);
+        } else {
+          throw new Error('Account created but login failed. Please try logging in.');
+        }
 
       } else if (activeTab === 'login') {
         // Login validation
@@ -183,62 +146,30 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
           throw new Error('Please enter your password');
         }
 
-        // Check credentials
-        const user = findUser(trimmedEmail);
-        if (!user || user.password !== password) {
-          throw new Error('Invalid username or password');
+        // Sign in with Supabase
+        const result = await signInUser(trimmedEmail, password);
+        if (!result) {
+          throw new Error('Invalid email or password');
         }
 
-        // Ensure user has a valid ID, generate one if missing
-        let userId = user.id;
-        if (!userId) {
-          userId = crypto.randomUUID();
-          // Update the stored user with the new ID
-          const users = getStoredUsers();
-          const userIndex = users.findIndex(u => u.email.toLowerCase() === trimmedEmail.toLowerCase());
-          if (userIndex !== -1) {
-            users[userIndex].id = userId;
-            localStorage.setItem('medilens-users', JSON.stringify(users));
-          }
+        if (result.user) {
+          setSuccessMessage('Login successful! Welcome back.');
+          setShowSuccess(true);
+
+          setTimeout(() => {
+            onLogin({ 
+              email: result.user.email || trimmedEmail, 
+              name: result.user.user_metadata?.name || 'User', 
+              id: result.user.id 
+            });
+          }, 1000);
+        } else {
+          throw new Error('Login failed. Please try again.');
         }
-
-        setSuccessMessage('Login successful! Welcome back.');
-        setShowSuccess(true);
-
-        setTimeout(() => {
-          onLogin({ email: user.email, name: user.name, id: userId });
-        }, 1000);
 
       } else if (activeTab === 'reset') {
-        // Password reset
-        if (!validateEmail(trimmedEmail)) {
-          throw new Error('Please enter a valid email address');
-        }
-
-        const user = findUser(trimmedEmail);
-        if (!user) {
-          throw new Error('No account found with this email address');
-        }
-
-        const passwordValidation = validatePassword(password);
-        if (!passwordValidation.isValid) {
-          throw new Error(passwordValidation.message);
-        }
-
-        if (password !== confirmPassword) {
-          throw new Error('Passwords do not match');
-        }
-
-        // Update password
-        updateUserPassword(trimmedEmail, password);
-
-        setSuccessMessage('Password reset successfully! You can now log in with your new password.');
-        setShowSuccess(true);
-
-        setTimeout(() => {
-          handleTabChange('login');
-          setShowSuccess(false);
-        }, 2000);
+        // For now, show message that password reset is not implemented
+        throw new Error('Password reset functionality will be implemented with Supabase Auth. Please contact support for assistance.');
       }
 
     } catch (error) {
