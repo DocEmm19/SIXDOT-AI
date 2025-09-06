@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, ArrowLeft, Bot, User, Upload, Search, MessageSquare, Loader2 } from 'lucide-react';
+import { Send, ArrowLeft, Bot, User, Upload, Search, MessageSquare, Loader2, Paperclip } from 'lucide-react';
 import MedicalLogo from './MedicalLogo';
 import { User as UserType } from '../App';
 import ThemeToggle from './ThemeToggle';
+import Modal from './Modal';
 
 interface Message {
   id: string;
@@ -22,6 +23,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -259,6 +261,51 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
     setIsLoading(false);
   };
 
+  const handleFileUpload = async (extractedText: string, fileName?: string) => {
+    // Create user message showing file upload
+    const fileMessage: Message = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: `📎 Uploaded file: ${fileName || 'Unknown file'}\n\nExtracted text:\n${extractedText.substring(0, 200)}${extractedText.length > 200 ? '...' : ''}`,
+      timestamp: new Date()
+    };
+
+    const loadingMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      type: 'bot',
+      content: '',
+      timestamp: new Date(),
+      isLoading: true
+    };
+
+    setMessages(prev => [...prev, fileMessage, loadingMessage]);
+    setIsLoading(true);
+
+    try {
+      // Send the full extracted text to n8n webhook
+      const response = await simulateLLMResponse(extractedText);
+      
+      setMessages(prev => prev.map(msg => 
+        msg.id === loadingMessage.id 
+          ? { ...msg, content: response, isLoading: false }
+          : msg
+      ));
+    } catch (error) {
+      setMessages(prev => prev.map(msg => 
+        msg.id === loadingMessage.id 
+          ? { 
+              ...msg, 
+              content: 'I apologize, but I encountered an error processing your uploaded file. Please try again or contact support if the issue persists.',
+              isLoading: false 
+            }
+          : msg
+      ));
+    }
+
+    setIsLoading(false);
+    setShowUploadModal(false);
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -353,6 +400,15 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
         {/* Input Area */}
         <div className="input-area bg-[var(--glass-bg)] backdrop-blur-[20px] border border-[var(--glass-border)] rounded-2xl p-4">
           <div className="flex items-end gap-3">
+            {initialContext === 'upload' && (
+              <button
+                onClick={() => setShowUploadModal(true)}
+                className="upload-btn p-3 bg-[rgba(255,255,255,0.1)] border border-[var(--glass-border)] rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.15)] transition-all duration-200"
+                title="Upload file"
+              >
+                <Paperclip className="w-5 h-5" />
+              </button>
+            )}
             <div className="flex-1">
               <input
                 ref={inputRef}
@@ -360,7 +416,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder={`Ask about ${getContextTitle().toLowerCase()}...`}
+                placeholder={initialContext === 'upload' ? 'Upload a file or type your message...' : `Ask about ${getContextTitle().toLowerCase()}...`}
                 className="w-full p-3 bg-[rgba(255,255,255,0.08)] border border-[var(--glass-border)] rounded-xl text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary-cyan)] focus:shadow-[0_0_0_3px_rgba(0,212,170,0.15)] resize-none"
                 disabled={isLoading}
               />
@@ -378,10 +434,20 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
             </button>
           </div>
           <div className="mt-2 text-xs text-[var(--text-muted)] text-center">
-            Press Enter to send • This AI provides educational information only
+            {initialContext === 'upload' ? 'Upload files or type messages • ' : ''}Press Enter to send • This AI provides educational information only
           </div>
         </div>
       </div>
+
+      {/* Upload Modal */}
+      <Modal
+        isOpen={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        title="Upload Your Document"
+        type="upload"
+        userEmail={user.email}
+        onSendToChat={handleFileUpload}
+      />
     </div>
   );
 };
