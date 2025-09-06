@@ -198,30 +198,11 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
   };
 
   const getContextSpecificPayload = (userMessage: string) => {
-    switch (initialContext) {
-      case 'upload':
-        return {
-          document_content: userMessage,
-          context: 'upload'
-        };
-      case 'medicine-search':
-        // Extract only medicine name from the message
-        const medicineName = extractMedicineName(userMessage);
-        return {
-          medicine_query: medicineName,
-          context: 'medicine-search'
-        };
-      case 'question':
-        return {
-          question_text: userMessage,
-          context: 'question'
-        };
-      default:
-        return {
-          message: userMessage,
-          context: initialContext
-        };
-    }
+    // Always send user input (including extracted text) in the "message" field
+    return {
+      message: userMessage,
+      context: initialContext
+    };
   };
 
   const extractMedicineName = (text: string): string => {
