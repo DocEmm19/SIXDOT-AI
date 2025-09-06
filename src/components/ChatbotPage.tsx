@@ -145,8 +145,8 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
         return responseText || 'Received response from workflow but could not parse it.';
       }
       
-      // Return the response from n8n workflow
-      return data.response || data.message || data.output || responseText || 'No response received from the workflow.';
+      // Extract and format the result field from JSON response
+      return formatJsonResponse(data);
       
     } catch (error) {
       console.error('💥 Error calling n8n webhook:', error);
@@ -160,6 +160,60 @@ const ChatbotPage: React.FC<ChatbotPageProps> = ({ user, onBack, initialContext 
     }
   };
 
+  const formatJsonResponse = (data: any): string => {
+    console.log('🎨 Formatting JSON response:', data);
+    
+    // Extract the result field from the response
+    const result = data.result || data.data || data.output || data.response || data;
+    
+    if (!result) {
+      return 'No result data found in the response.';
+    }
+    
+    // If result is a string, return it directly
+    if (typeof result === 'string') {
+      return result;
+    }
+    
+    // If result is an object, format it nicely
+    if (typeof result === 'object') {
+      return formatObjectToText(result);
+    }
+    
+    // For other types, convert to string
+    return String(result);
+  };
+
+  const formatObjectToText = (obj: any): string => {
+    let formatted = '';
+    
+    // Handle arrays
+    if (Array.isArray(obj)) {
+      obj.forEach((item, index) => {
+        formatted += `${index + 1}. ${typeof item === 'object' ? formatObjectToText(item) : item}\n`;
+      });
+      return formatted.trim();
+    }
+    
+    // Handle objects
+    Object.entries(obj).forEach(([key, value]) => {
+      const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      
+      if (typeof value === 'object' && value !== null) {
+        formatted += `**${formattedKey}:**\n${formatObjectToText(value)}\n\n`;
+      } else if (Array.isArray(value)) {
+        formatted += `**${formattedKey}:**\n`;
+        value.forEach((item, index) => {
+          formatted += `  ${index + 1}. ${item}\n`;
+        });
+        formatted += '\n';
+      } else {
+        formatted += `**${formattedKey}:** ${value}\n`;
+      }
+    });
+    
+    return formatted.trim();
+  };
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
 
