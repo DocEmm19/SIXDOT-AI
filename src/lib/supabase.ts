@@ -88,10 +88,10 @@ export const getProfile = async (userId: string): Promise<Profile | null> => {
     .from('profiles')
     .select('*')
     .eq('id', userId)
-    .single();
+    .limit(1);
 
   if (error) throw error;
-  return data;
+  return data && data.length > 0 ? data[0] : null;
 };
 
 export const updateProfile = async (userId: string, updates: Partial<Profile>) => {
